@@ -4,6 +4,12 @@
 
 ---
 
+# Installation
+
+Optionally you might want to create a new python virtual environment before installing this.
+
+To install clone the repo. In the root folder then enter `pip install -e ".[dev]"`
+
 # Model overview
 
 The $\text{soilice}$ model simulates couples flow of liquid water and heat transport in snow and soil. The model has two particular unique features:

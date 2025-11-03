@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "soilice"           # choose a unique name (no spaces)
+version = "0.0.1"
+description = "My numerical model"
+authors = [{ name = "Andrew Ireson" }]
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = ["numpy","pandas","matplotlib","scipy","numba"]   # list runtime deps here
+
+[project.optional-dependencies]
+dev = ["jupyterlab", "ipykernel", "pytest", "black"]
+
