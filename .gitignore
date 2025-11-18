@@ -1,4 +1,19 @@
-.ipynb_checkpoints
-__pycache__
 .DS_Store
 *.log
+
+# Byte-compiled
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+.venv/
+env/
+venv/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/

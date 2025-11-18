@@ -1,42 +1,32 @@
----
+<img src="logo.png" width="300px">  
 
-<img src=logo.png width=300px>  
+# About
 
----
+$\text{soilice}$ v1.0 is a coupled mass and heat balance solver for frozen soils. The code is written in python and is designed to be concise, highly readable and easy to customize (try new constituitive relationships, etc) without having to re-compile the code. It will run on any platform. It uses a just-in-time compiler and an ODE solver, so is efficient and has excellent mass/energy conservation. User instructions are provided in this readme file below. The technical documentation is provided [here](here).
 
 # Installation
 
-Optionally you might want to create a new python virtual environment before installing this.
+Optionally you might want to create a new python virtual environment before installing this (see [here](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/)).
 
-To install clone the repo. In the root folder then enter `pip install -e ".[dev]"`
+To install $\text{soilice}$ clone this repo. In the root folder then enter `pip install -e ".[dev]"`. Now you can import the model to use it from anywhere on your computer.
 
-# Model overview
+# Running the testcases
 
-The $\text{soilice}$ model simulates couples flow of liquid water and heat transport in snow and soil. The model has two particular unique features:
+The best way to get started with $\text{soilice}$ is to run the provided test cases. These are simple boundary value problems that are configured in jupyter notebooks, available [here](notebooks/runSoil_Infiltration.ipynb).
 
-1. The physically based soil mass and heat transport model is fully coupled with a physically based snow model, such that the soil upper boundary condition includes radiation (heat from the atmosphere), conduction (heat from the snowpack) and advection (heat from infiltration, and turbulent heat fluxes)
-2. The model is written in a python, such that the code is concise, highly readable and easy to customize (try new constituitive relationships, etc) without having to re-compile the code. It will run on any platform. It uses a just-in-time compiler and an ODE solver, so is efficient and has excellent mass/energy conservation.
+# User guide
 
-The model can be configured in the following basic way:
+The $\text{soilice}$ model simulates coupled flow of liquid water and heat transport in a variable saturated and variably frozen soil profile. This can be configured to solve flow only, transport only or coupled flow and transport. There is also flexibility in the boundary conditions that are used, as described below. To import the model use the command `from src_soil import run as run`
 
-### Snowpack model
-Simulates a standalone snowpack, driven by hydrometric observations. The model simulates the snow mass, depth, heat content, sublimation and snowmelt. To run this configuration you need the import statement `from src_snow import run as run`
+## Configuring soilice options
 
-### Coupled snow-soil model
-Simulates the snowpack as above, but with heat and mass exchange with the underlying soil profile. The soil upper boundary is a mass and heat flux (type II boundary). To run this configuration you need the import statement `from src_coupled import run as run`
-
-### Soil model
-Simulates a standalone soil profile. This can be configured to solve flow only, transport only or coupled flow and transport. There is also flexibility in the boundary conditions that are used, as described below. To run this configuration you need the import statement `from src_soil import run as run`
-
-# Configuring the soil model
-
-To configure the soil model you must set the following options, in the dictionary `opts`.
+To configure the model options you must create a dictionary `opts` with the following variables:
 
 `opts['massflag']` is set to `0.` to make the assumption $\frac{dmc_pT}{dt}=mc_p\frac{dT}{dt}$ 
 
-`opts['massflag']` is set to `1.` to make the assumption $\frac{dmc_pT}{dt}=mc_p\frac{dT}{dt}+Tc_p\frac{dm}{dt}$ (which is more correct). This allows the user to explore the impact of the simplifying assumption.
+`opts['massflag']` is set to `1.` to make the assumption $\frac{dmc_pT}{dt}=mc_p\frac{dT}{dt}+Tc_p\frac{dm}{dt}$ (which is more correct). This allows the user to explore the impact of the simplifying assumption that is present in some other frozen soil models.
 
-`opts['gravity']` is set to `0.` for horizontal flow (no gravity component) or `1.` for vertical (positive downwards) flow. Note that in a vertical model configuration (with flow switched on) there is always a free-drainage boundary condition, while in horizontal configuration the lower boundary becomes a no-flow boundary.
+`opts['gravity']` is set to `0.` for horizontal flow (no gravity component) or `1.` for vertical (positive downwards) flow. 
 
 `opts['freeDrainage']` is set to `0.` for a no flow lower boundary condition and `1.0` for a free draining lower boundary condition.
 
@@ -54,7 +44,7 @@ To configure the soil model you must set the following options, in the dictionar
 
 Turning off flow and transport allows the user to quickly see the equilibrium distribution of liquid water and ice in a soil profile for a given initial (steady-state) condition. 
 
-# Parameters and constants
+## Parameters and constants
 
 In the model `pars` is a dictionary that defines all model parameters - meaning constants that might change under different soil conditions. Each parameter can either by given a scalar value (e.g. `pars['thetaS']=0.4`), for a uniform profile, or it must have a unique value defined for very soil layer (e.g. `pars['thetaS'][:5]=0.4; pars['thetaS'][5:10]=0.3`, where `nz=10`) for a layered profile. Before sending the dictionary into the model it must be converted to a `numba` compatible dictionary with either `MakeDictFloat` (for uniform profile) or `MakeDictArray` (for a layered profile). 
 
@@ -62,7 +52,7 @@ Note that the parameters can be imported from the `HP_xxx.py` and `thermalSoilPa
 
 The dictionary `const` includes all the model parameters that can be considered constants and will not change with depth or between different model runs. Examples include the density of water, `const['rho_liq']`. The constants can be imported from the `constants.py` file.
 
-# The model space grid
+## The model space grid
 
 The user must specify the following variables to define the model space grid, noting the `z` represents depth below ground in (m):
 
@@ -71,7 +61,7 @@ The user must specify the following variables to define the model space grid, no
 `dz` an array of dimension `nz` that represents the depth of each soil layer (starting at the top and going down), such that `np.sum(dz)==zMax`. <br>
 `z` is not strictly needed by the model, but could be useful for plotting purposes. `z` is an array storing the midpoint depth of each cell. 
 
-# The model time grid
+## The model time grid
 
 The user must specify the following variables to define the model time grid, noting `t` is time in units that must be consistent with the hydraulic and thermal conductivity parameter values:
 
@@ -79,7 +69,7 @@ The user must specify the following variables to define the model time grid, not
 `dt` the time step for each calculation step. The first calculation performed would be stored at time `t[1]=t[0]+dt`. Note `dt` is currently setup to be constant, and this is probably a sensible decision to stick to. <br>
 `nt` an integer representing the number of time steps.
 
-# The model boundary conditions
+## The model boundary conditions
 
 The time varying boundary conditions must always be defined for every calculation step - even if they take a constant value. The user must define the following time varying boundary conditions:
 
@@ -88,14 +78,14 @@ The time varying boundary conditions must always be defined for every calculatio
 `TTop` the temperature of the upper boundary face (ususally `z=0`), always defined but only used if `conductionTop` is switched on. <br>
 `TBot` the temperature of the lower boundary face (`z=zMax`), always defined but only used if `conductionBot` is switched on.
 
-# The model initial conditions
+## The model initial conditions
 
 The depth dependent initial conditions are set for `t=t[0]`. Each is an array with `nz` cells. The following variables must be set:
 
 `T0` is the initial soil temperature <br>
 `psi0` is the initial matric potential corresponding to the initial total water content.
 
-# Running the model
+## Running the model
 
 To run the model, all above steps must be completed, and then enter:
 
@@ -104,7 +94,7 @@ run(dt,t,dz,nz,T0,psi0,qI,TTop,TBot,jTop,parsD,const,opts,rtol=1e-8)`
 
 The `rtol` parameter is optional (default value is `1e-7`) but can improve accuracy.
 
-# Checking mass and energy balance
+## Checking mass and energy balance
 
 To plot the mass and energy balance for the soil profile, import the function
 
@@ -114,7 +104,7 @@ and then run
 
 `soilBalanceCheck(t,thetaL,thetaI,T,qT,qB,jT,jB,dz,const,pars)`
 
-# Checking the soil properties
+## Checking the soil properties
 
 To plot all the constitutive relationships that are hard coded in `src_soil.py`, import the function 
 
