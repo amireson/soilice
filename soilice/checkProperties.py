@@ -42,8 +42,8 @@ def getProperties(psie,T,pars,const):
     kappa=thermalKfun(psie,psif,T,parsD,constD)
     fdash=fdashFun(psie,parsD)
     gdash=gdashfun(T,parsD,constD)
-    Kf=KFun(psif,parsD)
-    Ke=KFun(psie,parsD)
+    Kf=KFun(psie,psif,parsD,constD)
+    Ke=KFun(psie,psie,parsD,constD)
 
     psie=psie.reshape(orig_shape)
     T=T.reshape(orig_shape)

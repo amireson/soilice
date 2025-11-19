@@ -7,36 +7,6 @@ from numba import jit
 from numba import types
 from numba.typed import Dict
 
-# Thermal conductivity function
-@jit(nopython=True)
-def thermalKfun(psie,psif,T,pars,const):
-    thetaL=thetaFun(psif,pars)
-    thetaT=thetaFun(psie,pars)
-    thetaI=const['rho_liq']/const['rho_ice']*(thetaT-thetaL)
-    # thetaS=1-pars['thetaS']
-    thetaG=pars['thetaS']-thetaT
-    kappa = (
-        (const['kappa_liq'] ** thetaL) *
-        (const['kappa_ice'] ** thetaI) *
-        (const['kappa_air'] ** thetaG) *
-        (pars['kappa_soil'] ** pars['theta_mineral'])*
-        (pars['kappa_org'] ** pars['theta_org']))   
-#    kappa=(thetaL*const['kappa_liq']**pars['a']+thetaI*const['kappa_ice']**pars['a']+thetaS*pars['kappa_soil']**pars['a'])**(1/pars['a'])
-    return kappa
-    
-## Geostudio function:
-#@jit(nopython=True)
-#def thermalKfun(psie,psif,T,pars,const):
-#    thetaL=thetaFun(psif,pars)
-#    thetaT=thetaFun(psie,pars)
-#    thetaI=const['rho_liq']/const['rho_ice']*(thetaT-thetaL)
-#    thetaG=pars['thetaS']-thetaT
-#    n = pars['thetaS']
-#    kunfroz=const['kappa_liq']**thetaT*pars['kappa_soil']**(1-n)*const['kappa_air']**thetaG
-#    kfroz=const['kappa_ice']**thetaT*pars['kappa_soil']**(1-n)*const['kappa_air']**thetaG
-#    kappa=thetaL/thetaT*kunfroz+thetaI/thetaT*kfroz
-#    return kappa
-#
 def MakeDictArray():
     d=Dict.empty(
     key_type=types.unicode_type,
@@ -49,6 +19,22 @@ def MakeDictFloat():
     value_type=types.float64,)
     return d
 
+# Thermal conductivity function
+@jit(nopython=True)
+def thermalKfun(psie,psif,T,pars,const):
+    # Uses geometric mean of each component
+    thetaL=thetaFun(psif,pars)
+    thetaT=thetaFun(psie,pars)
+    thetaI=const['rho_liq']/const['rho_ice']*(thetaT-thetaL)
+    thetaG=pars['thetaS']-thetaT
+    kappa = (
+        (const['kappa_liq'] ** thetaL) *
+        (const['kappa_ice'] ** thetaI) *
+        (const['kappa_air'] ** thetaG) *
+        (pars['kappa_soil'] ** pars['theta_mineral'])*
+        (pars['kappa_org'] ** pars['theta_org']))
+    return kappa
+    
 # GCE
 @jit(nopython=True)
 def GCEfun(T,pars,const):
@@ -110,29 +96,10 @@ def KFun(psie,psif,pars,const):
 
     return K
 
-#def KFun(psie,psif,pars,const):
-#    Se=(1+(psie*-pars['alpha'])**pars['n'])**(-pars['m'])
-#    Se[psie>0.]=1.0
-#    Ke=pars['Ks']*Se**pars['neta']*(1-(1-Se**(1/pars['m']))**pars['m'])**2
-#    
-#    Se=(1+(psif*-pars['alpha'])**pars['n'])**(-pars['m'])
-#    Se[psif>0.]=1.0
-#    Kf=pars['Ks']*Se**pars['neta']*(1-(1-Se**(1/pars['m']))**pars['m'])**2
-#
-#    K=(Ke+Kf)/2.
-#    return K
-
 @jit(nopython=True)
 def Richards(t,psif,psie,dz,pars,const,opts,nz,qI):
 
-    # thetaL=thetaFun(psif,pars)
-    # thetaT=thetaFun(psie,pars)
-    # thetaI=const['rho_liq']/const['rho_ice']*(thetaT-thetaL)
-    # K=KFun(psie,pars)
-    # K=K*10**(-7*thetaI)
-
-    # K=KFun(psif,pars)
-    
+    # Get hydraulic conductivity
     K=KFun(psie,psif,pars,const)
     Kmid=(K[:-1]+K[1:])/2.0
 
@@ -155,9 +122,6 @@ def Richards(t,psif,psie,dz,pars,const,opts,nz,qI):
     normflow=-Kmid*((psie[1:]-psie[:-1])/((dz[1:]+dz[:-1])/2)-opts['gravity'])
     q[1:-1]=opts['cryoflow']*cryoflow+(1-opts['cryoflow'])*normflow
 
-    # print(((psie[1:]-psie[:-1])/dz-pars['gravity']))
-    
-    # fdash = dtheta/dpsi:
     fdash=fdashFun(psie,pars)
     
     # continuity
@@ -167,7 +131,7 @@ def Richards(t,psif,psie,dz,pars,const,opts,nz,qI):
     return dthetaTdt,dpsiedt,q
 
 @jit(nopython=True)
-def heatbalanceFun(t,psie,psif,T,TTop,TBot,jTop,dz,pars,const,opts,nz,dthetaTdt,q):
+def heatbalanceFun(t,psie,psif,T,TTop,TBot,jTopAdv,jTopNonAdv,dz,pars,const,opts,nz,dthetaTdt,q):
     
     # Determine the thermal cond and heat capacity for given temperature
     kappa=thermalKfun(psie,psif,T,pars,const)
@@ -180,6 +144,7 @@ def heatbalanceFun(t,psie,psif,T,TTop,TBot,jTop,dz,pars,const,opts,nz,dthetaTdt,
 
     # Upper conduction boundary - no conduction (note jG comes in as advection, even if it is conduction):
     jd[0]=-kappa[0]*(T[0]-TTop)/(dz[0]/2.)*opts['conductionTop']
+    jd[0] += jTopNonAdv
     
     # Lower boundary - no conduction:
     jd[-1]=-kappa[-1]*(TBot-T[-1])/(dz[-1]/2.)*opts['conductionBot']
@@ -189,12 +154,13 @@ def heatbalanceFun(t,psie,psif,T,TTop,TBot,jTop,dz,pars,const,opts,nz,dthetaTdt,
 
     # Internal (central difference ~ consider changing this)
     # ja[1:-1]=q[1:-1]*const['rho_liq']*const['cp_liq']*(T[1:]+T[:-1])/2.
-    # Internal (upstream T) [MAKE SURE YOU VALIDATE THIS WORKS]
+
+    # Internal (upstream T used for advection)
     ja[1:-1]=q[1:-1]*const['rho_liq']*const['cp_liq']*T[:-1]
     ja[1:-1][q[1:-1]<0]=q[1:-1][q[1:-1]<0]*const['rho_liq']*const['cp_liq']*T[1:][q[1:-1]<0]
     
     # Upper boundary:
-    ja[0]=jTop # 0 #q[0]*pars['CL']*pars['rhoL']*TB
+    ja[0]=jTopAdv 
 
     # Lower boundary - free drainage:
     ja[-1]=q[-1]*const['rho_liq']*const['cp_liq']*T[-1]
@@ -247,9 +213,9 @@ def ODEfunCall(t,DV,qI,TTop,TBot,TInf,jTopBC,dz,pars,const,opts,nz):
         q=np.zeros(nz+1)
 
     if opts['simulateTransport']:
-        jTop=q[0]*const['cp_liq']*const['rho_liq']*TInf
-        jTop=jTop+opts['groundHeatFlux']*jTopBC
-        dTdt,j=heatbalanceFun(t,psie,psif,T,TTop,TBot,jTop,dz,pars,const,opts,nz,dthetaTdt,q)
+        jTopAdv=q[0]*const['cp_liq']*const['rho_liq']*TInf
+        jTopNonAdv=opts['groundHeatFlux']*jTopBC
+        dTdt,j=heatbalanceFun(t,psie,psif,T,TTop,TBot,jTopAdv,jTopNonAdv,dz,pars,const,opts,nz,dthetaTdt,q)
     else:
         dTdt=np.zeros(nz)
         j=np.zeros(nz+1)
@@ -261,12 +227,11 @@ def ODEfunCall(t,DV,qI,TTop,TBot,TInf,jTopBC,dz,pars,const,opts,nz):
     dDVdt[1]=j[0]
     dDVdt[-2]=q[-1]
     dDVdt[-1]=j[-1]
-#     dDVdt=np.hstack((dpsiedt,dTdt))
+
     return dDVdt
     
 # Run model
 def run(dt,t,dz,nz,T0,psi0,qI,TTop,TBot,TInf,jTopBC,parsD,const,opts,rtol=1e-7):
-    # 4. scipy function "ode", with the jacobian, solving one step at a time:
 
     constD=MakeDictFloat()
     for k in const: constD[k]=const[k]
@@ -280,7 +245,6 @@ def run(dt,t,dz,nz,T0,psi0,qI,TTop,TBot,TInf,jTopBC,parsD,const,opts,rtol=1e-7):
     psie[0,:]=psi0
     fluxes=np.zeros((nt,4))
     
-    # DV=np.hstack((psie,T,fluxes))
     DV = np.zeros((nt,2*nz+4))
     ind_psi=np.arange(nz)*2+2
     ind_T=np.arange(nz)*2+3
@@ -289,10 +253,7 @@ def run(dt,t,dz,nz,T0,psi0,qI,TTop,TBot,TInf,jTopBC,parsD,const,opts,rtol=1e-7):
     DV[0,ind_T] = T0
         
     r = ode(ODEfun)
-    # default rtol=1e-6
     r.set_integrator('vode',method='BDF',uband=3,lband=3,rtol=rtol)
-
-    
     
     tic=time.time()
     for i in range(len(t)-1):
@@ -300,7 +261,6 @@ def run(dt,t,dz,nz,T0,psi0,qI,TTop,TBot,TInf,jTopBC,parsD,const,opts,rtol=1e-7):
         r.set_initial_value(np.hstack([0,0,DV[i,2:-2],0,0]), 0)
         params=(qI[i],TTop[i],TBot[i],TInf[i],jTopBC[i],dz,parsD,constD,optsD,nz)
         
-        #r.set_jac_params(*params)
         r.set_f_params(*params)
         r.integrate(dt)
         DV[i+1,:]=r.y
@@ -317,12 +277,9 @@ def run(dt,t,dz,nz,T0,psi0,qI,TTop,TBot,TInf,jTopBC,parsD,const,opts,rtol=1e-7):
     
     i,j=T.shape
     psif=np.array([GCEfun(T[i,:],parsD,constD) for i in range(nt)])
-    # psif=np.reshape(GCEfun(T.flatten(),parsD,constD),(i,j))
     psif=np.minimum(psie,psif)
     thetaL=np.array([thetaFun(psif[i,:],parsD) for i in range(nt)])
-    # thetaL=np.reshape(thetaFun(psif.flatten(),parsD),(i,j))
     thetaT=np.array([thetaFun(psie[i,:],parsD) for i in range(nt)])
-    # thetaT=np.reshape(thetaFun(psie.flatten(),parsD),(i,j))
     thetaI=const['rho_liq']/const['rho_ice']*(thetaT-thetaL)
     
     return psie,T,thetaL,thetaI,qT,qB,jT,jB
