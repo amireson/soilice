@@ -2,13 +2,13 @@
 
 # About
 
-$\text{soilice}$ v1.0 is a coupled mass and heat balance solver for frozen soils. The code is written in python and is designed to be concise, highly readable and easy to customize (try new constituitive relationships, etc) without having to re-compile the code. It will run on any platform. It uses a just-in-time compiler and an ODE solver, so is efficient and has excellent mass/energy conservation. User instructions are provided in this readme file below. The technical documentation is provided [here](here).
+$\text{soilice}$ v1.0 is a coupled mass and heat balance solver for frozen soils. The code is written in python and is designed to be concise, highly readable and easy to customize (try new constituitive relationships, etc) without having to re-compile the code. It will run on any platform. It uses a just-in-time compiler and an ODE solver, so is efficient and has excellent mass/energy conservation. User instructions are provided in this readme file below. The technical documentation is provided [here](technicalDocumentation/soiliceDoc.pdf).
 
 # Installation
 
 Optionally you might want to create a new python virtual environment before installing this (see [here](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/)).
 
-To install $\text{soilice}$ clone this repo. In the root folder then enter `pip install -e ".[dev]"`. Now you can import the model to use it from anywhere on your computer.
+To install $\text{soilice}$ clone this repo. In the root folder then enter `pip install -e ".[dev]"`. Now you can import the model to use it from anywhere on your computer. With these options the package is installed in development mode, meaning you can edit the source code and the changes will be reflected wherever you use the imported package - making it easy to experiment with alternative constituitive relations and so on.
 
 # Running the testcases
 
@@ -46,9 +46,9 @@ Turning off flow and transport allows the user to quickly see the equilibrium di
 
 ## Parameters and constants
 
-In the model `pars` is a dictionary that defines all model parameters - meaning constants that might change under different soil conditions. Each parameter can either by given a scalar value (e.g. `pars['thetaS']=0.4`), for a uniform profile, or it must have a unique value defined for very soil layer (e.g. `pars['thetaS'][:5]=0.4; pars['thetaS'][5:10]=0.3`, where `nz=10`) for a layered profile. Before sending the dictionary into the model it must be converted to a `numba` compatible dictionary with either `MakeDictFloat` (for uniform profile) or `MakeDictArray` (for a layered profile). 
+In the model `pars` is a dictionary that defines all model parameters - meaning constants that might change under different soil conditions. Each parameter can either by given a scalar value (e.g. `pars['thetaS']=0.4`), for a uniform profile, or it must have a unique value defined for every soil layer (e.g. `pars['thetaS'][:5]=0.4; pars['thetaS'][5:10]=0.3`, where `nz=10`) for a layered profile. Before sending the dictionary into the model it must be converted to a `numba` compatible dictionary with either `MakeDictFloat` (for uniform profile) or `MakeDictArray` (for a layered profile). 
 
-Note that the parameters can be imported from the `HP_xxx.py` and `thermalSoilParameters.py` files.
+Note that sample parameters can be imported from `pars_loam.py` using the command `from soilice.pars_loam import pars`.
 
 The dictionary `const` includes all the model parameters that can be considered constants and will not change with depth or between different model runs. Examples include the density of water, `const['rho_liq']`. The constants can be imported from the `constants.py` file.
 
