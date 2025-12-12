@@ -180,7 +180,7 @@ def heatbalanceFun(t,psie,psif,T,TTop,TBot,jTopAdv,jTopNonAdv,dz,pars,const,opts
     dTdt=(fluxDiv-storageTerm)/denom
 
     # Change in temperature in unfrozen conditions:
-    storageTermUF=const['cp_liq']*T*const['rho_liq']*T*dthetaTdt
+    storageTermUF=const['cp_liq']*const['rho_liq']*T*dthetaTdt
     dTdtUF=(fluxDiv-storageTermUF)/CB
 
     # Combine correctly:
