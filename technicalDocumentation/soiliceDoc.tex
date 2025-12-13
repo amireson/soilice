@@ -9,7 +9,7 @@
 \linespread{1.3}
 \usepackage{amsmath}
 \usepackage[authoryear,round]{natbib}
-
+\renewcommand{\arraystretch}{1.3} % Extra spacing in arrays
 \usepackage{lineno}  % Add this package
 
 \linenumbers  % This turns line numbering on
@@ -24,7 +24,7 @@
 \end{figure}
 
 
-{\huge soilice: A modelling framework to test alternative process representations in a frozen soil hydrological model}\\
+{\huge soilice: Governing Equations}\\
 \vspace{12pt}
 {\large Andrew Ireson}\\
 %{\large Alana Muenchrath}\\
@@ -35,21 +35,63 @@
 
 \end{center}
 
+\section{State variables}
 
-\section{Developing Governing Equations for soilice}
+We assume the following soil volume, mass, energy and temperature relations, all of which are extensive variables:
 
-\subsection{Internal energy}
+\begin{equation}
+	\begin{array}{l}
+		V=V_I+V_L+V_S+V_A \\
+		M=M_I+M_L+M_S+M_A\\
+		U=U_I+U_L+U_S+U_A\\
+		T=T_I=T_L=T_S=T_A
+	\end{array}
+\end{equation}
 
-Consider a control volume of water, of mass $M$ (kg) and temperature $T$ ($^\circ$C). We define internal energy associated with sensible heat, that is the sensible internal energy, $U_s$ (J), as 
+where $V$ (m$^3$) is volume, $M$ (kg) is mass, $U$ (J) is internal energy and $T$ ($^\circ$C) is temperature, and subscripts are for the components liquid, $L$, ice, $I$, soil solid matter, $S$, and air, $A$. 
 
-\begin{equation} \label{eq: SH}
+Equivalent intensive variables, expressed per unit volume, and given by dividing the above expressions (excluding $T$) by $V$ are
+
+\begin{equation}
+	\begin{array}{l}
+		V/V=1=\theta_I+\theta_L+\theta_S+\theta_A \\
+		M/V=m=m_I+m_L+m_S+m_A\\
+		U/V=u=u_I+u_L+u_S+u_A\\
+	\end{array}
+\end{equation}
+
+
+The density of a component, $\rho_i$ (kg m$^{-3}$), is
+
+\begin{equation}
+	\rho_i=\frac{M_i}{V_i}
+\end{equation}
+
+while the mass fraction of a component, $m_i$ (kg m$^{-3}$) is
+
+\begin{equation}
+	m_i=\frac{M_i}{V}=\rho_i\theta_i
+\end{equation}
+
+\section{Internal energy}
+
+Consider a control volume of water $V$ (m$^3$), of mass $M$ (kg) and temperature $T$ ($^\circ$C). We define internal energy associated with sensible heat, that is the sensible internal energy, $U_s$ (J), as 
+
+\begin{equation}
 U_s=M c_pT
 \end{equation}
 
-where $c_p$ (J kg$^{-1}$ K$^{-1}$) is the specific heat capacity (which is defined by this equation). The differential equation for the change in sensible internal energy with time is
+where $c_p$ (J kg$^{-1}$ K$^{-1}$) is the specific heat capacity (which is defined by this equation). Likewise
+
+
+\begin{equation} \label{eq: SH}
+u_s=m c_pT
+\end{equation}
+
+The differential equation for the change in sensible internal energy with time is
 
 \begin{equation}
-\frac{dU_s}{dt}=\frac{d}{dt}(M c_p T)=M c_p \frac{dT}{dt} + c_p T \frac{dM}{dt}
+\frac{du_s}{dt}=\frac{d}{dt}(m c_p T)=m c_p \frac{dT}{dt} + c_p T \frac{dm}{dt}
 \end{equation}
 
 Latent heat is a form of internal energy, called latent internal energy, $U_l$ (J), associated with the chemical bonds between molecules in a particular phase (solid, liquid, gas) of a substance. We assume latent heat is negative in the solid phase, zero in the liquid phase and positive in the vapor phase, hence
@@ -60,80 +102,98 @@ Latent heat is a form of internal energy, called latent internal energy, $U_l$ (
 	\\
 	U_{ll}=0
 	\\
-	U_{lv}=-M_v\lambda_v
+	U_{lv}=M_v\lambda_v
 	\end{array}
 \end{equation}
 
-where $\lambda_f$, the amount of heat needed to convert 1 kg of ice to 1 kg of liquid water, is a constant $\approx 3.34\times10^5$ J kg$^{-1}$ and $\lambda_v=2.50\times10^6$ J kg$^{-1}$ at $T=0^\circ$C). 
+where $\lambda_f$, the amount of heat needed to convert 1 kg of ice to 1 kg of liquid water, is a constant $\approx 3.34\times10^5$ J kg$^{-1}$ and $\lambda_v=2.50\times10^6$ J kg$^{-1}$ at $T=0^\circ$C). Likewise, we can define the intensive variables:
+
+\begin{equation}
+	\begin{array}{c}
+	u_{li}=-u_i\lambda_f
+	\\
+	u_{ll}=0
+	\\
+	u_{lv}=m_v\lambda_v
+	\end{array}
+\end{equation}
 
 Using this convention, the total latent internal energy is
 
 \begin{equation} \label{eq: u_l_rel}
-U_l=-M_i \lambda_f +M_v \lambda_v
+u_l=-m_i \lambda_f +m_v \lambda_v
 \end{equation}
 
 and the change in latent internal energy is
 
 \begin{equation}
-\frac{dU_l}{dt}=-\lambda_f\frac{dM_i}{dt}+\lambda_v\frac{dM_v}{dt}
+\frac{du_l}{dt}=-\lambda_f\frac{dm_i}{dt}+\lambda_v\frac{dm_v}{dt}
 \end{equation}
 
 The total internal energy that concerns us in soils is given by the sum of sensible and latent heat, i.e.
 
 \begin{equation}
-U=U_s+U_l
+u=u_s+u_l
 \end{equation}
 
 In a control volume containing ice, liquid water, vapor and soil solids we have 
 
 \begin{equation}
-U=U_{si}+U_{sl}+U_{sv}+U_{ss}+U_{li}+U_{ll}+U_{lv}
+u=u_{si}+u_{sl}+u_{sv}+u_{ss}+u_{li}+u_{lv}
 \end{equation}
 
-Adopting our conventions above we can drop $U_{ll}$. 
+(Noting that $U_{ll}=0$). 
 
-\subsection{Mass and energy balance equations}
+\section{Mass and energy balance equations}
 
-We express the mass and internal energy per unit volume, i.e., as $\bar{m}$ (kg m$^{-3}$) and $\bar{u}$ (J m$^{-3}$). The mass and energy balance equations are 
+We will assume that the mass and internal energy in the vapor phase is negligible, hence
+
+\begin{equation}
+\begin{array}{l}
+	m_v=0\\
+	u_{sv} = 0\\
+	u_{lv} = 0
+\end{array}
+\end{equation}
+
+The mass and energy balance equations are 
 
 \begin{equation} \label{eq: FD_massbal}
-\frac{d\bar{m}}{dt}=\frac{d\bar{m}_l}{dt}+\frac{d\bar{m}_i}{dt}=-\nabla q_l\rho_l
+\frac{dm}{dt}=\frac{dm_l}{dt}+\frac{dm_i}{dt}=-\nabla q_l\rho_l
 \end{equation}
 
 and 
 
 \begin{equation}
-\frac{d\bar{u}}{dt}=
-\frac{d\bar{u_{si}}}{dt}+
-\frac{d\bar{u_{sl}}}{dt}+
-\frac{d\bar{u_{ss}}}{dt}+
-\frac{d\bar{u_{li}}}{dt}=
+\frac{du}{dt}=
+\frac{du_{si}}{dt}+
+\frac{du_{sl}}{dt}+
+\frac{du_{ss}}{dt}+
+\frac{du_{li}}{dt}=
 -\nabla (j_a+j_c+j_o)
 \end{equation}
 
-where $\bar{u}_{ss}$ (J m$^{-3}$) is the sensible internal energy of the soil solids, $j_a$, $j_c$ and $j_o$ (J m$^{-2}$ s$^{-1}$) are the advective, conductive, and other heat flux components. 
-
-Expanding the left hand side of the energy balance equation gives
+where $q_l$ (m s$^{-1}$) is the flux of liquid water and $j_a$, $j_c$ and $j_o$ (J m$^{-2}$ s$^{-1}$) are the advective, conductive, and other heat flux components. Expanding the left hand side of the energy balance equation gives
 
 \begin{equation} \label{eq: UBal3DP}
 	\begin{array}{ll}
 		\displaystyle
-\frac{d\bar{u}}{dt}
+\frac{du}{dt}
 &
 		\displaystyle
-=\left(\bar{m}_{i} c_{pi} + \bar{m}_{l} c_{pl} + \bar{m}_{s} c_{ps}\right)
+=\left(m_{i} c_{pi} + m_{l} c_{pl} + m_{s} c_{ps}\right)
 \frac{dT}{dt}
 +c_{pl}T
-\frac{d\bar{m}_{l}}{dt}
+\frac{dm_{l}}{dt}
 +(c_{pi}T-\lambda_f)
-\frac{d\bar{m}_i}{dt}\\
+\frac{dm_i}{dt}\\
 	\end{array}
 \end{equation}
 
 We define the bulk heat capacity, $c_{pb}$ (J kg$^{-1}$ K$^{-1}$) as
 
 \begin{equation}
-c_{pb}=\bar{m}_{i} c_{pi} + \bar{m}_{l} c_{pl} + \bar{m}_{s} c_{ps}
+c_{pb}=m_{i} c_{pi} + m_{l} c_{pl} + m_{s} c_{ps}
 \end{equation}
 
 so we have 
@@ -141,20 +201,20 @@ so we have
 \begin{equation} \label{eq: UBal3DP}
 	\begin{array}{ll}
 		\displaystyle
-\frac{d\bar{u}}{dt}
+\frac{du}{dt}
 &
 		\displaystyle
 =c_{pb}
 \frac{dT}{dt}
 +c_{pl}T
-\frac{d\bar{m}_{l}}{dt}
+\frac{dm_{l}}{dt}
 +(c_{pi}T-\lambda_f)
-\frac{d\bar{m}_i}{dt}\\
+\frac{dm_i}{dt}\\
 	\end{array}
 \end{equation}
 
 
-Now we want to eliminate the terms $d\bar{m}_l/dt$ and $d\bar{m}_i/dt$. Under equilibrium conditions (which is a big assumption) a soil control volume should reach a unique state on the basis of the temperature and the total water. We ignore any hysteresis effects. We define the total water content, $\theta_T$ (-) as being given by
+Now we want to eliminate the terms $dm_l/dt$ and $dm_i/dt$. Under equilibrium conditions (which is a big assumption) a soil control volume should reach a unique state on the basis of the temperature and the total water. We ignore any hysteresis effects. We define the total water content, $\theta_T$ (-) as being given by
 
 \begin{equation}
 	\theta_T=\theta_L+\frac{\rho_I}{\rho_L}\theta_I
@@ -163,7 +223,7 @@ Now we want to eliminate the terms $d\bar{m}_l/dt$ and $d\bar{m}_i/dt$. Under eq
 We defined $\psi_e$ (m) as the effective matric potential, which is associated with $\theta_T$ by the soil characteristic curve relationship, 
 
 \begin{equation}
-	\theta_T=M(\psi_e)
+	\theta_T=\theta(\psi_e)
 \end{equation}
 
 $\psi_f$ (m) is the matric potential that corresponds to the freezing threshold, as defined by the GCE, where (Amankwah et al., 2021):
@@ -176,34 +236,34 @@ where $T$ is the soil temperature in $^\circ$C, and $T_0 = 273.15$. If $\psi_e\l
 
 \begin{equation}
 	\begin{array}{llll}
-		\theta_T=M(\psi_e); & \theta_L=\theta_T; & \theta_I = 0; & \mathrm{if}\hspace{6pt} \psi_e\leq\psi_f\\
+		\theta_T=\theta(\psi_e); & \theta_L=\theta_T; & \theta_I = 0; & \mathrm{if}\hspace{6pt} \psi_e\leq\psi_f\\
 		\\
-		\theta_T=M(\psi_e); & \theta_L=M(\psi_f(T))=F(T); & \theta_I = \frac{\rho_L}{\rho_I}(\theta_T-\theta_L); & \mathrm{if}\hspace{6pt} \psi_e>\psi_f\\
+		\theta_T=\theta(\psi_e); & \theta_L=\theta(\psi_f(T))=F(T); & \theta_I = \frac{\rho_L}{\rho_I}(\theta_T-\theta_L); & \mathrm{if}\hspace{6pt} \psi_e>\psi_f\\
 	\end{array}
 \end{equation}
 
-The function $F(T)$ defines the freezing characteristic curve, and is simply the combination of the GCE and the $\theta=M(\psi)$ relationship. $M(\psi)$ and $F(T)$ can be differentiated, giving
+The function $F(T)$ defines the freezing characteristic curve, and is simply the combination of the GCE and the $\theta(\psi)$ relationship. $\theta(\psi)$ and $F(T)$ can be differentiated, giving
 
 \begin{equation}
-	\frac{d\theta_T}{d\psi_e}=M'(\psi_e)
+	\frac{d\theta_T}{d\psi_e}=C(\psi_e)
 \end{equation}
 
 and
 
 \begin{equation}
-	\frac{d\theta_{L}}{dT}=G'(T)
+	\frac{d\theta_{L}}{dT}=F'(T)
 \end{equation}
 
 So we can further say
 
 \begin{equation} \label{eq_thetaPart}
 	\begin{array}{llll}
-		\displaystyle \frac{d\theta_T}{dt} = M'(\psi_e)\frac{d\psi_e}{dt};
+		\displaystyle \frac{d\theta_T}{dt} = C(\psi_e)\frac{d\psi_e}{dt};
 		& \displaystyle \frac{d\theta_L}{dt} = \frac{d\theta_T}{dt};
 		& \displaystyle \frac{d\theta_I}{dt} = 0;
 		& \displaystyle \mathrm{if}\hspace{6pt} \psi_e\leq\psi_f\\
 		\\
-		\displaystyle \frac{d\theta_T}{dt} = M'(\psi_e)\frac{d\psi_e}{dt};
+		\displaystyle \frac{d\theta_T}{dt} = C(\psi_e)\frac{d\psi_e}{dt};
 		& \displaystyle \frac{d\theta_L}{dt} = F'(T)\frac{dT}{dt};
 		& \displaystyle \frac{d\theta_I}{dt} = \frac{\rho_L}{\rho_I}\left(\frac{d\theta_T}{dt}-\frac{d\theta_L}{dt}\right);
 		& \displaystyle \mathrm{if}\hspace{6pt} \psi_e>\psi_f\\
@@ -214,9 +274,9 @@ Now, consider first the case where $\psi_e \leq \psi_f$ (i.e. the soil is unfroz
 
 \begin{equation}
 	\begin{array}{cc}
-\displaystyle \frac{d\bar{m}_l}{dt}=\frac{d\bar{m}}{dt};
+\displaystyle \frac{dm_l}{dt}=\frac{dm}{dt};
 & 
-\displaystyle \frac{d\bar{m}_i}{dt}=0
+\displaystyle \frac{dm_i}{dt}=0
 	\end{array}
 \end{equation}
 %
@@ -225,9 +285,9 @@ Substituting this into Equation \ref{eq: UBal3DP} we have
 \begin{equation} \label{eq: unfrozen_dT}
 \frac{dT}{dt}
 =
-\frac{\displaystyle\frac{d\bar{u}}{dt}
+\frac{\displaystyle\frac{du}{dt}
 -c_{pl}T
-\frac{d\bar{m}}{dt}
+\frac{dm}{dt}
 }{c_{pb}
 }
 \end{equation}
@@ -235,39 +295,39 @@ Substituting this into Equation \ref{eq: UBal3DP} we have
 Next consider the case where $\psi_e > \psi_f$ (i.e. the soil is frozen). This time we have
 
 \begin{equation}
-\frac{d\bar{m}_l}{dt}=\rho_lF'(T)\frac{dT}{dt}
+\frac{dm_l}{dt}=\rho_lF'(T)\frac{dT}{dt}
 \end{equation}
 
 and
 
 \begin{equation}
-\frac{d\bar{m}_i}{dt}=\frac{d\bar{m}}{dt}-\frac{d\bar{m}_l}{dt}
+\frac{dm_i}{dt}=\frac{dm}{dt}-\frac{dm_l}{dt}
 =
-\frac{d\bar{m}}{dt}-\rho_lF'(\bar{m},T)\frac{dT}{dt}
+\frac{dm}{dt}-\rho_lF'(m,T)\frac{dT}{dt}
 \end{equation}
 
 Substituting these expressions into the Equation \ref{eq: UBal3DP} we get
 
-\begin{equation} 
-\frac{d\bar{u}}{dt}
-=
-(c_{pb}
-+\rho_l F'(T)
-((c_{pl}-c_{pi})T+\lambda_f)
-)\frac{dT}{dt}
-+(c_{pi}T-\lambda_f)
-\frac{d\bar{m}}{dt}
-\end{equation}
-
-Rearranging we have
+%\begin{equation} 
+%\frac{du}{dt}
+%=
+%(c_{pb}
+%+\rho_l F'(T)
+%((c_{pl}-c_{pi})T+\lambda_f)
+%)\frac{dT}{dt}
+%+(c_{pi}T-\lambda_f)
+%\frac{dm}{dt}
+%\end{equation}
+%
+%Rearranging we have
 
 \begin{equation} \label{eq: frozen_dT}
 \frac{dT}{dt}
 =
 \frac{\displaystyle
-\frac{d\bar{u}}{dt}
+\frac{du}{dt}
 -(c_{pi}T-\lambda_f)
-\frac{d\bar{m}}{dt}
+\frac{dm}{dt}
 }{c_{pb}
 +\rho_l F'(T)
 ((c_{pl}-c_{pi})T+\lambda_f)
@@ -276,24 +336,24 @@ Rearranging we have
 
 which may then be solved by replacing the derivative terms on the right hand side with the net fluxes.
 
-\subsection{Finite difference formulation}
+\section{Finite difference formulation}
 
 For a one-dimensional vertical model, with $z$ (m) representing the depth below the ground surface, it is good practice to use a block-centred grid, where $z_n$ denotes the midpoint of a cell, and $z_{n-1/2}$ and $z_{n+1/2}$ are the depths of the top and bottom faces of the cell, respectively. Considering a single control volume at depth index $n$, we can write
 
 \begin{equation} \label{eq: massAndEnergy}
 	\begin{array}{rcl}
 		\displaystyle
-\left . \frac{d\bar{m}_l}{dt}\right |_n
-+ \left . \frac{d\bar{m}_i}{dt}\right |_n
+\left . \frac{dm_l}{dt}\right |_n
++ \left . \frac{dm_i}{dt}\right |_n
 & 
 \displaystyle 
 = -\rho_l\nabla q_n
 %&
 %		\displaystyle
 %=\frac{(q_{l,n-1/2}-q_{l,n+1/2})\rho_l}{z_{n+1/2}-z_{n-1/2}}
-\\
+\\[1.0em]
 		\displaystyle
-\left . \frac{d\bar{u}}{dt}\right |_n
+\left . \frac{du}{dt}\right |_n
 & 
 \displaystyle 
 = -\nabla j_n
@@ -306,10 +366,10 @@ For a one-dimensional vertical model, with $z$ (m) representing the depth below 
 	\end{array}
 \end{equation}
 
-where $\nabla q_n$ and $\nabla j_n$ are the net fluxes of mass and energy into the control volume. Expressing these equations with total mass, $\bar{m}$ and temperature $T$ as the dependent variables we have 
+where $\nabla q_n$ and $\nabla j_n$ are the net fluxes of mass and energy into the control volume. Expressing these equations with total mass, $m$ and temperature $T$ as the dependent variables we have 
 
 \begin{equation} 
-\left . \frac{d\bar{m}}{dt} \right |_n
+\left . \frac{dm}{dt} \right |_n
 =-\rho_l \nabla q_n
 \end{equation}
 
@@ -321,18 +381,18 @@ where $\nabla q_n$ and $\nabla j_n$ are the net fluxes of mass and energy into t
 \displaystyle
 \frac{ \nabla j_n
 -c_{pl}T_n
-\left . \frac{d\bar{m}}{dt} \right |_n
+\left . \frac{dm}{dt} \right |_n
 }{c_{pb}
 }
 ,
 &\displaystyle  \psi_{e,n} \leq \psi_{f,n}
-\\
+\\[1.0em]
 \displaystyle
 \frac{\nabla j_n
 -(c_{pi}T_n-\lambda_f)
-\left . \frac{d\bar{m}}{dt} \right |_n
+\left . \frac{dm}{dt} \right |_n
 }{c_{pb}
-+\rho_l f'(\bar{m_n},T_n)
++\rho_l f'(m_n,T_n)
 ((c_{pl}-c_{pi})T_n+\lambda_f)
 }
 ,
@@ -344,13 +404,13 @@ where $\nabla q_n$ and $\nabla j_n$ are the net fluxes of mass and energy into t
 Expanding the flux terms we have
 
 \begin{equation} \label{eq: massAndEnergy}
-	\begin{array}{rcl}
+	\begin{array}{rl}
 \displaystyle 
 -\rho_l\nabla q_n
 &
 		\displaystyle
 =\frac{(q_{l,n-1/2}-q_{l,n+1/2})\rho_l}{z_{n+1/2}-z_{n-1/2}}
-\\
+\\[1.0em]
 \displaystyle 
 -\nabla j_n
 &
@@ -367,22 +427,22 @@ Here the individual flux terms are given by
 \begin{equation}
 \begin{array}{rl}
 	\displaystyle
-q_{l,n-1/2}&=-K_{n-1/2}\left(\frac{\psi_n-\psi_{n-1}}{z_i-z_{n-1}}-1\right)
-\\
+q_{l,n-1/2}&\displaystyle =-K_{n-1/2}\left(\frac{\psi_n-\psi_{n-1}}{z_i-z_{n-1}}-1\right)
+\\[0.8em]
 	\displaystyle
-q_{l,n+1/2}&=-K_{n+1/2}\left(\frac{\psi_{n+1}-\psi_{n}}{z_{n+1}-z_{n}}-1\right)
-\\
+q_{l,n+1/2}&\displaystyle =-K_{n+1/2}\left(\frac{\psi_{n+1}-\psi_{n}}{z_{n+1}-z_{n}}-1\right)
+\\[0.8em]
 	\displaystyle
-j_{a,n-1/2}&=q_{l,n-1/2}\rho_l c_{pl} T_{n-1}
-\\
+j_{a,n-1/2}&\displaystyle =q_{l,n-1/2}\rho_l c_{pl} T_{n-1}
+\\[0.8em]
 	\displaystyle
-j_{a,n+1/2}&=q_{l,n+1/2}\rho_l c_{pl} T_{n}
-\\
+j_{a,n+1/2}&\displaystyle =q_{l,n+1/2}\rho_l c_{pl} T_{n}
+\\[0.8em]
 	\displaystyle
-j_{c,n-1/2}&=-\kappa_{n-1/2}\left(\frac{T_n-T_{n-1}}{z_n-z_{n-1}}\right)
-\\
+j_{c,n-1/2}&\displaystyle =-\kappa_{n-1/2}\left(\frac{T_n-T_{n-1}}{z_n-z_{n-1}}\right)
+\\[0.8em]
 	\displaystyle
-j_{c,n+1/2}&=-\kappa_{n+1/2}\left(\frac{T_{n+1}-T_{n}}{z_{n+1}-z_{n}}\right)
+j_{c,n+1/2}&\displaystyle =-\kappa_{n+1/2}\left(\frac{T_{n+1}-T_{n}}{z_{n+1}-z_{n}}\right)
 \end{array}
 \end{equation}
 
@@ -414,7 +474,7 @@ where all $j$ terms have units (J m$^{-2}$ s$^{-1}$), and $j_{a,T}$ is advection
 
 We have here a system of ordinary differential equations which we solve using an ODE solver with the method of lines. 
 
-\subsection{Constituitive relationships}
+\section{Hydraulic and thermal properties}
 
 Now, we need expressions for $M$, $M'$, $F$ and $F'$, all of which we can get from the van Genuchten equations combined with the GCE equation.
 
@@ -469,6 +529,41 @@ Finally we need to define the hydraulic conductivity. In unfrozen conditions thi
 K(\psi)=K_sS_e^{1/2}\left(1-\left(1-S_e^{1/m}\right)^m\right)\end{equation}
 
 In unfrozen conditions, we are still seeking an ideal relationship for $K(\psi_e,T)$. For now we use impedence.
+
+The thermal conductivity is given by
+
+\begin{equation}
+\kappa=1.0
+\end{equation}
+
+
+The parameters used in the above equations are summarized here:
+
+\begin{table}[h]
+	\begin{center}
+		\begin{tabular}{|c|l|c|c|}
+\hline
+Symbol & Description & Values for loam & Units
+\\ \hline
+$\alpha$ & This is what is it & 0.1 1.0  &
+\\ \hline
+		\end{tabular}
+\caption{Model parameters are specific to the soil properties}
+	\end{center}
+\end{table}
+
+\begin{table}[h]
+	\begin{center}
+		\begin{tabular}{|c|l|c|c|}
+\hline
+Symbol & Description & Values for loam & Units
+\\ \hline
+$\alpha$ & This is what is it & 0.1 1.0  &
+\\ \hline
+		\end{tabular}
+\caption{Model constants that should not change for different soil properties}
+	\end{center}
+\end{table}
 
 %\section*{Symbols}
 %
