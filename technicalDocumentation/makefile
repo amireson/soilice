@@ -18,6 +18,3 @@ clean:
 	rm -f soiliceDoc.fls
 	rm -f soiliceDoc.bbl
 	rm -f soiliceDoc.blg
-
-markdown:
-	pandoc -s soiliceDoc.tex -o soiliceDoc.md
