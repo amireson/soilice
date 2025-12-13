@@ -1,11 +1,8 @@
-::: center
-soilice: A modelling framework to test alternative process
-representations in a frozen soil hydrological model\
-Andrew Ireson\
-2025-12-12
-:::
+<img src="../logo.png" width="300px">  
 
-# Developing Governing Equations for soilice
+Andrew Ireson
+
+# soilice: Governing Equations
 
 ## Internal energy
 
