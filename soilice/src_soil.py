@@ -26,11 +26,11 @@ def thermalKfun(psie,psif,T,pars,const):
     thetaL=thetaFun(psif,pars)
     thetaT=thetaFun(psie,pars)
     thetaI=const['rho_liq']/const['rho_ice']*(thetaT-thetaL)
-    thetaG=pars['thetaS']-thetaT
+    thetaA=pars['thetaS']-thetaT
     kappa = (
         (const['kappa_liq'] ** thetaL) *
         (const['kappa_ice'] ** thetaI) *
-        (const['kappa_air'] ** thetaG) *
+        (const['kappa_air'] ** thetaA) *
         (pars['kappa_soil'] ** pars['theta_mineral'])*
         (pars['kappa_org'] ** pars['theta_org']))
     return kappa
@@ -44,7 +44,7 @@ def GCEfun(T,pars,const):
 
 # Slope function dtheta_L/dT
 @jit(nopython=True)
-def gdashfun(T,pars,const):
+def SFCslope(T,pars,const):
     psi=GCEfun(T,pars,const)
     
     C=const['lambda_f']/const['g']/const['T0']
@@ -63,7 +63,7 @@ def CBfun(psie,psif,pars,const):
     thetaT=thetaFun(psie,pars)
     thetaI=const['rho_liq']/const['rho_ice']*(thetaT-thetaL)
     thetaS=1-pars['thetaS']
-    thetaG=thetaS-thetaT
+    #thetaA=thetaS-thetaT
     CB=(const['cp_ice']*thetaI*const['rho_ice'])+(const['cp_liq']*thetaL*const['rho_liq'])+(pars['cp_soil']*thetaS*pars['rho_soil'])
     return CB
 
@@ -75,7 +75,7 @@ def thetaFun(psi,pars):
     return pars['thetaR']+(pars['thetaS']-pars['thetaR'])*Se
 
 @jit(nopython=True)
-def fdashFun(psi,pars):
+def CFun(psi,pars):
     Se=(1+(psi*-pars['alpha'])**pars['n'])**(-pars['m'])
     Se[psi>0.]=1.0
     dSedh=pars['alpha']*pars['m']/(1-pars['m'])*Se**(1/pars['m'])*(1-Se**(1/pars['m']))**pars['m']
@@ -122,11 +122,11 @@ def Richards(t,psif,psie,dz,pars,const,opts,nz,qI):
     normflow=-Kmid*((psie[1:]-psie[:-1])/((dz[1:]+dz[:-1])/2)-opts['gravity'])
     q[1:-1]=opts['cryoflow']*cryoflow+(1-opts['cryoflow'])*normflow
 
-    fdash=fdashFun(psie,pars)
+    C=CFun(psie,pars)
     
     # continuity
     dthetaTdt=-(q[1:]-q[:-1])/dz       
-    dpsiedt=1/fdash*dthetaTdt
+    dpsiedt=1/C*dthetaTdt
     
     return dthetaTdt,dpsiedt,q
 
@@ -169,14 +169,14 @@ def heatbalanceFun(t,psie,psif,T,TTop,TBot,jTopAdv,jTopNonAdv,dz,pars,const,opts
     j=jd+opts['withadv']*ja
     
     # Heat balance terms:
-    gdash=gdashfun(T,pars,const)
+    Fdash=SFCslope(T,pars,const)
     CB=CBfun(psie,psif,pars,const)
 
     fluxDiv=-(j[1:]-j[:-1])/dz
     
     # Change in temperature in frozen conditions:
     storageTerm=(const['cp_ice']*T-const['lambda_f'])*const['rho_liq']*dthetaTdt
-    denom=const['rho_liq']*gdash*(opts['massflag']*T*(const['cp_liq']-const['cp_ice'])+const['lambda_f'])+CB
+    denom=const['rho_liq']*Fdash*(opts['massflag']*T*(const['cp_liq']-const['cp_ice'])+const['lambda_f'])+CB
     dTdt=(fluxDiv-storageTerm)/denom
 
     # Change in temperature in unfrozen conditions:

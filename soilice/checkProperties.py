@@ -6,11 +6,11 @@ from numba import types
 from numba.typed import Dict
 
 from .src_soil import GCEfun
-from .src_soil import gdashfun
+from .src_soil import SFCslope
 from .src_soil import CBfun
 from .src_soil import thermalKfun
 from .src_soil import thetaFun
-from .src_soil import fdashFun
+from .src_soil import CFun
 from .src_soil import KFun
 from .src_soil import MakeDictFloat
 
@@ -37,11 +37,11 @@ def getProperties(psie,T,pars,const):
     thetaI=const['rho_liq']/const['rho_ice']*(thetaT-thetaL)
 
     # properties:
-    dthdT=gdashfun(T,parsD,constD)
+    dthdT=SFCslope(T,parsD,constD)
     CB=CBfun(psie,psif,parsD,constD)
     kappa=thermalKfun(psie,psif,T,parsD,constD)
-    fdash=fdashFun(psie,parsD)
-    gdash=gdashfun(T,parsD,constD)
+    C=CFun(psie,parsD)
+    Fdash=SFCslope(T,parsD,constD)
     Kf=KFun(psie,psif,parsD,constD)
     Ke=KFun(psie,psie,parsD,constD)
 
@@ -54,12 +54,12 @@ def getProperties(psie,T,pars,const):
     dthdT=dthdT.reshape(orig_shape)
     CB=CB.reshape(orig_shape)
     kappa=kappa.reshape(orig_shape)
-    fdash=fdash.reshape(orig_shape)
-    gdash=gdash.reshape(orig_shape)
+    C=C.reshape(orig_shape)
+    Fdash=Fdash.reshape(orig_shape)
     Kf=Kf.reshape(orig_shape)
     Ke=Ke.reshape(orig_shape)
     
-    return psie,psif,thetaL,thetaI,thetaT,dthdT,CB,kappa,fdash,gdash,Kf,Ke
+    return psie,psif,thetaL,thetaI,thetaT,dthdT,CB,kappa,C,Fdash,Kf,Ke
 
 def plotProperties(pars,const):
 
@@ -72,7 +72,7 @@ def plotProperties(pars,const):
         i+=1
         
         T=np.linspace(Ti,Ti,n)
-        psie,psif,thetaL,thetaI,thetaT,dthdT,CB,kappa,fdash,gdash,Kf,Ke=getProperties(psi,T,pars,const)
+        psie,psif,thetaL,thetaI,thetaT,dthdT,CB,kappa,C,Fdash,Kf,Ke=getProperties(psi,T,pars,const)
         
         pl.subplot(4,2,1)
         pl.semilogx(-psi,thetaL,color=mycolor[i],label=f'T={Ti}')
@@ -87,11 +87,11 @@ def plotProperties(pars,const):
         pl.semilogx(-psi,kappa,mycolor[i])
         pl.ylabel('kappa'); pl.grid('on')
         pl.subplot(4,2,5)
-        pl.semilogx(-psi,fdash,mycolor[i])
-        pl.ylabel('fdash'); pl.grid('on')
+        pl.semilogx(-psi,C,mycolor[i])
+        pl.ylabel('C'); pl.grid('on')
         pl.subplot(4,2,6)
-        pl.semilogx(-psi,gdash,mycolor[i])
-        pl.ylabel('gdash'); pl.grid('on')
+        pl.semilogx(-psi,Fdash,mycolor[i])
+        pl.ylabel('Fdash'); pl.grid('on')
         pl.subplot(4,2,7)
         pl.loglog(-psi,Kf,mycolor[i])
         pl.xlabel('psi'); pl.ylabel('Kf'); pl.grid('on')

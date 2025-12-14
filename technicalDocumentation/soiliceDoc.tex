@@ -482,11 +482,11 @@ Now, we need expressions for $M$, $M'$, $F$ and $F'$, all of which we can get fr
 S_e=(1+(\alpha \psi)^n)^{-m}\end{equation}
 
 \begin{equation}
-\theta=M(\psi)=\theta_r+(\theta_s-\theta_r)S_e\end{equation}
+\theta=M(\psi)=\theta_r+(\theta_{sat}-\theta_r)S_e\end{equation}
 
 \begin{equation}
 \frac{d\theta}{d\psi}=M'(\psi)=
-\frac{-\alpha m (\theta_s-\theta_r)}{1-m}
+\frac{-\alpha m (\theta_{sat}-\theta_r)}{1-m}
 S_e^{1/m}\left(1-S_e^{1/m}\right)^m
 \end{equation}
 
@@ -500,10 +500,10 @@ and
 \begin{equation}
 \begin{array}{ll}
 	F(T) & =M\left(\psi_f(T)\right)
-	% = \theta_r+(\theta_s-\theta_r)\left(1+(\alpha\psi_f)^n\right)^{-m}
+	% = \theta_r+(\theta_{sat}-\theta_r)\left(1+(\alpha\psi_f)^n\right)^{-m}
 	\\
 	& =
-	\theta_r+(\theta_s-\theta_r)\left(1+\left(
+	\theta_r+(\theta_{sat}-\theta_r)\left(1+\left(
 	\frac{\alpha L_fT}{gT_0}
 	\right)^n\right)^{-m}
 \end{array}
@@ -528,25 +528,42 @@ Finally we need to define the hydraulic conductivity. In unfrozen conditions thi
 \begin{equation}
 K(\psi)=K_sS_e^{1/2}\left(1-\left(1-S_e^{1/m}\right)^m\right)\end{equation}
 
-In unfrozen conditions, we are still seeking an ideal relationship for $K(\psi_e,T)$. For now we use impedence.
-
-The thermal conductivity is given by
+In unfrozen conditions, we are still seeking an ideal relationship for $K_f(\psi_e,T)$. For now we use impedence relationship
 
 \begin{equation}
-\kappa=1.0
+K_f(\psi_e,T)=K(\psi_e)^{-10\theta_I}
 \end{equation}
 
+The bulk thermal conductivity can estimated as the volume weighted geometric mean of each component, with the equation
 
-The parameters used in the above equations are summarized here:
+\begin{equation}
+\kappa=
+\kappa_I^{\theta_L}
+\kappa_L^{\theta_L}
+\kappa_S^{\theta_S}
+\kappa_A^{\theta_A}
+\end{equation}
 
+The soil dependent parameters and soil independent constants used in the above equations are summarized below in Table 1 and 2, respectively. 
+\newpage
 \begin{table}[h]
 	\begin{center}
-		\begin{tabular}{|c|l|c|c|}
+		\begin{tabular}{|p{1.8cm}|p{6cm}|p{3cm}|p{3cm}|}
 \hline
 Symbol & Description & Values for loam & Units
 \\ \hline
-$\alpha$ & This is what is it & 0.1 1.0  &
-\\ \hline
+$\theta_r$ & Residual water content & 0.218 & - \\
+$\theta_{sat}$ & Saturated water content & 0.520 & - \\
+$\alpha$ & van Genuchten parameter & 1.15 & m$^{-1}$ \\
+$n$ & van Genuchten parameter & 2.03 & - \\
+$m$ & van Genuchten parameter & $1-(1/n)$ & - \\ 
+$\eta$ & van Genuchten parameter & 0.5 & - \\
+$K_s$ & Saturated hydraulic conductivity & 3.76$\times 10^{-6}$ & m s$^{-1}$ \\
+%$S_s$ & Specific storage coefficient & 1e-6 & m$^{-1}$ \\
+$c_{ps}$ & Soil solids specific heat capacity &  850 & J kg$^{-1}$ K$^{-1}$ \\
+$\kappa_S$ & Soil solids thermal conductivity & 2.9 & J s$^{-1}$ m$^{-1}$ K$^{-1}$ \\
+$\rho_S$ & Soil solids density & 2600 & kg m$^{-3}$ \\
+\hline
 		\end{tabular}
 \caption{Model parameters are specific to the soil properties}
 	\end{center}
@@ -554,12 +571,23 @@ $\alpha$ & This is what is it & 0.1 1.0  &
 
 \begin{table}[h]
 	\begin{center}
-		\begin{tabular}{|c|l|c|c|}
+		\begin{tabular}{|p{1.8cm}|p{6cm}|p{3cm}|p{3cm}|}
 \hline
 Symbol & Description & Values for loam & Units
 \\ \hline
-$\alpha$ & This is what is it & 0.1 1.0  &
-\\ \hline
+$\rho_l$ & Density of liquid water & 1000 & kg m$^{-3}$ \\
+$\rho_i$ & Density of ice & 918 & kg m$^{-3}$ \\
+$\rho_a$ & Default air density & 1.293 & kg m$^{-3}$ \\
+$c_{pl}$ & Specific heat capacity of liquid water & 4180 & J kg$^{-1}$ K$^{-1}$ \\
+$c_{pi}$ & Specific heat capacity of ice & 2100 & J kg$^{-1}$ K$^{-1}$ \\
+%$c_{pa}$ & Specific heat capacity of air & 1006 & J kg$^{-1}$ K$^{-1}$ \\
+$\kappa_l$ & Thermal conductivity of liquid water & 0.56  & J s$^{-1}$ m$^{-1}$ K$^{-1}$ \\
+$\kappa_i$ & Thermal conductivity of ice & 2.2  & J s$^{-1}$ m$^{-1}$ K$^{-1}$ \\
+$\kappa_i$ & Thermal conductivity of air & 0.025  & J s$^{-1}$ m$^{-1}$ K$^{-1}$ \\
+$\lambda_f$ & Latent heat of fusion & 0.334$\times 10^6$ &  J kg$^{-1}$ \\
+%$\lambda_v$ & Latent heat of vaporisation & 2.26$\times 10^6$ &  J kg$^{-1}$ \\
+%$\lambda_s$ & Latent heat of sublimation & 2.835$\times 10^6$ &  J kg$^{-1}$ \\
+\hline
 		\end{tabular}
 \caption{Model constants that should not change for different soil properties}
 	\end{center}
