@@ -93,30 +93,95 @@ The depth dependent initial conditions are set for `t=t[0]`. Each is an array wi
 
 To run the model, all above steps must be completed, and then enter:
 
-`psie,T,thetaL,thetaI,qT,qB,jT,jB=
-run(dt,t,dz,nz,T0,psi0,qI,TTop,TBot,jTop,parsD,const,opts,rtol=1e-8)`
+``` python
+psie,T,thetaL,thetaI,qT,qB,jT,jB=
+run(dt,t,dz,nz,T0,psi0,qI,TTop,TBot,jTop,parsD,const,opts,rtol=1e-8)
+```
 
 The `rtol` parameter is optional (default value is `1e-7`) but can improve accuracy.
 
 ## Checking mass and energy balance
 
-To plot the mass and energy balance for the soil profile, import the function
+To plot the mass and energy balance for the soil profile, import and run the following:
 
-`from balanceChecks import soilBalanceCheck`
+``` python
+from balanceChecks import soilBalanceCheck
 
-and then run
 
-`soilBalanceCheck(t,thetaL,thetaI,T,qT,qB,jT,jB,dz,const,pars)`
+soilBalanceCheck(t,thetaL,thetaI,T,qT,qB,jT,jB,dz,const,pars)
+```
+
+Note, this function must be run after running the model.
 
 ## Checking the soil properties
 
-To plot all the constitutive relationships that are hard coded in `src_soil.py`, import the function 
+To plot all the constitutive relationships that are hard coded in `src_soil.py`, run
 
-`from checkProperties import getProperties`
+``` python
+# Import soil parameters, or create manually:
+from soilice.pars_loam import pars
 
-and then run
+# Import constants:
+from soilice.constants import const
 
-` psie,psif,thetaL,thetaI,thetaT,dthdT,CB,kappa,fdash,gdash,Kf,Ke=getProperties(psi,T,pars,const)`
+# Import plotting function:
+from soilice.checkProperties import plotProperties
+
+# Plot:
+plotProperties(pars,const)
+```
+
+Alternatively to return all the variables for customized plots you may run:
+
+``` python
+from soilice.checkProperties import getProperties
+
+psie,psif,thetaL,thetaI,thetaT,dthdT,CB,kappa,fdash,gdash,Kf,Ke=getProperties(psi,T,pars,const)
+```
 
 Note, this function needs the parameters and constants to be defined and it needs values of `psi` and `T`.
 
+## Customizing a function
+
+It is possible to test alternative functions in $\text{soilice}$, for example for the hydraulic of thermal properties. The code below overwrites the default hydraulic conductivity function, and should be included in the script/notebook before the run command.
+
+``` python
+# Overide the KFun with a custom function:
+from numba import jit 
+import soilice.src_soil as sm
+
+@jit(nopython=True)
+def KFun(psie,psif,pars,const):
+    # Using frozen psi to calculate K:
+	# Note this will result in very low K values, and this is inappropriate for infiltration simulations
+    Se=(1+(psif*-pars['alpha'])**pars['n'])**(-pars['m'])
+    Se[psif>0.]=1.0
+    K=pars['Ks']*Se**pars['neta']*(1-(1-Se**(1/pars['m']))**pars['m'])**2
+    
+    return K
+
+sm.KFun=KFun
+```
+
+
+This can be adapted to any other functions. Here is the list of the functions in `src_soil` that are likely candidates for exploring alternative forms:
+
+``` python3
+thermalKfun(psie,psif,T,pars,const)
+
+GCEfun(T,pars,const)
+
+SFCslope(T,pars,const)
+
+CBfun(psie,psif,pars,const)
+
+thetaFun(psi,pars)
+
+CFun(psi,pars)
+
+KFun(psie,psif,pars,const)
+
+Richards(t,psif,psie,dz,pars,const,opts,nz,qI)
+
+heatbalanceFun(t,psie,psif,T,TTop,TBot,jTopAdv,jTopNonAdv,dz,pars,const,opts,nz,dthetaTdt,q)
+```
