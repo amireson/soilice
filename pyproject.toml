@@ -2,9 +2,6 @@
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools]
-packages = ["soilice"]
-
 [project]
 name = "soilice"           # choose a unique name (no spaces)
 version = "0.0.1"
@@ -17,3 +14,6 @@ dependencies = ["numpy","pandas","matplotlib","scipy","numba"]   # list runtime 
 [project.optional-dependencies]
 dev = ["jupyterlab", "ipykernel", "pytest", "black"]
 
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["soilice*"]
