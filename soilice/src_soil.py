@@ -256,7 +256,33 @@ class model:
         self.rtol=rtol
         
     def setPars(self,pars):
+        # Determine whether the soil parameters are uniform or not:
+        uniform_pars=True
+        for k in pars:
+            if np.ndim(pars[k])>0:
+                uniform_pars=False
+        
         self.pars=pars
+        
+        if not(uniform_pars):
+            # Non-uniform soil parameters (at least one should be given with dim nz):
+            for k in pars:
+                if np.ndim(pars[k])==0:
+                    # Here we have one parameter given, so duplicate it to make it uniform
+                    self.pars[k]=np.full(self.nz,pars[k])
+                elif len(pars[k])==1:
+                    # Here we have one parameter given, so duplicate it to make it uniform
+                    self.pars[k]=np.full(self.nz,pars[k])
+                elif len(pars[k])==2:
+                    # Here we have two parameters defining a linear relationship of the form
+                    self.pars[k]=np.interp(self.z,[self.z0,self.zMax],pars[k]) 
+                elif len(pars[k])==3:
+                    # Exponential relationship where:
+                    # pars[k][0]=parameter value at ground surface
+                    # pars[k][1]=parameter value at 1m depth
+                    # pars[k][2]=parameter value at infinity
+                    c=np.log((pars[k][0]-pars[k][2])/(pars[k][1]-pars[k][2]))
+                    self.pars[k]=pars[k][2]+(pars[k][0]-pars[k][2])*np.exp(-c*self.z)
         
     def setConst(self,const):
         self.const=const
@@ -265,6 +291,8 @@ class model:
         self.dz=np.diff(bz)
         self.z=bz[:-1]+self.dz/2
         self.nz=len(self.z)
+        self.z0=bz[0]
+        self.zMax=bz[-1]
         
     def tGrid(self,t0,tMax,dt):
         self.dt=dt
@@ -296,7 +324,7 @@ class model:
                 return np.zeros(self.nz)+x
             elif len(x) == 2:
                 # Linear initial condition from top to bottom:
-                return np.linspace(x[0],x[1],self.nz)
+                return np.interp(self.z,[self.z0,self.zMax],x)
             elif len(x)==self.nz:
                 # Fully specified 
                 return x
@@ -307,10 +335,20 @@ class model:
     # Run model
     def run(self):
 
-        # For a uniform simulation, just run this code unmodified. This is more efficient:
-        parsD=MakeDictFloat()
-        for k in self.pars: parsD[k]=self.pars[k]
+        uniform_pars=True
+        for k in self.pars:
+            if np.ndim(self.pars[k])>0:
+                uniform_pars=False
         
+        if uniform_pars:
+            # Uniform soil parameters (more efficient):
+            parsD=MakeDictFloat()
+        else:
+            # Non-uniform soil parameters (at least one should be given with dim nz):
+            parsD=MakeDictArray()
+            
+        for k in self.pars: parsD[k]=self.pars[k]
+            
         constD=MakeDictFloat()
         for k in self.const: constD[k]=self.const[k]
         optsD=MakeDictFloat()
@@ -349,7 +387,8 @@ class model:
 
         # Pack up model input/output:
         inOut=modelInOut()
-        for i in ['dt','nt','t','dz','nz','z','pars','const',
+        for i in ['dt','nt','t','dz','nz','z','z0','zMax',
+                  'pars','const',
                   'jTopBC','qI','TInf','TTop','TBot',
                   'T0','psi0','opts','rtol']: 
             setattr(inOut, i, getattr(self, i))
