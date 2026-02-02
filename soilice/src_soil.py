@@ -96,6 +96,8 @@ from scipy.integrate import ode
 from numba import types
 from numba.typed import Dict
 
+import dill
+
 def MakeDictArray():
     d=Dict.empty(
     key_type=types.unicode_type,
@@ -244,22 +246,18 @@ def ODEfunCall(t,DV,qI,TTop,TBot,TInf,jTopBC,dz,pars,const,opts,nz):
     return dDVdt
 
 # class for saving model output
-class modelOutput:
+class modelInOut:
     pass
-    
+
+
 class model:
     def __init__(self,opts,rtol=1e-7):
         self.opts=opts
         self.rtol=rtol
         
     def setPars(self,pars):
-        # For a uniform simulation, just run this code unmodified. This is more efficient:
-        parsD=MakeDictFloat()
-        for k in pars: parsD[k]=pars[k]
-            
         self.pars=pars
-        self.parsD=parsD
-
+        
     def setConst(self,const):
         self.const=const
 
@@ -309,7 +307,9 @@ class model:
     # Run model
     def run(self):
 
-        parsD=self.parsD
+        # For a uniform simulation, just run this code unmodified. This is more efficient:
+        parsD=MakeDictFloat()
+        for k in self.pars: parsD[k]=self.pars[k]
         
         constD=MakeDictFloat()
         for k in self.const: constD[k]=self.const[k]
@@ -336,33 +336,66 @@ class model:
         for i in range(self.nt-1):
             
             r.set_initial_value(np.hstack([0,0,DV[i,2:-2],0,0]), 0)
-            params=(self.qI[i],self.TTop[i],self.TBot[i],self.TInf[i],self.jTopBC[i],self.dz,self.parsD,constD,optsD,self.nz)
+            params=(self.qI[i],self.TTop[i],self.TBot[i],self.TInf[i],self.jTopBC[i],self.dz,parsD,constD,optsD,self.nz)
             
             r.set_f_params(*params)
             r.integrate(self.dt)
             DV[i+1,:]=r.y
     
         runtime=time.time()-tic
-        print('ode, with jac runtime = %.2f seconds'%(runtime))
+        print('soilice ran successfully!')
+        print('               runtime:     % .2f seconds'%(runtime))        
+        # print(' ode, with jac runtime:     % .2f seconds'%(runtime))
 
-        output=modelOutput()
-
-        for i in ['t','z','pars','const','T0','psi0','opts']: 
-            setattr(output, i, getattr(self, i))
+        # Pack up model input/output:
+        inOut=modelInOut()
+        for i in ['dt','nt','t','dz','nz','z','pars','const',
+                  'jTopBC','qI','TInf','TTop','TBot',
+                  'T0','psi0','opts','rtol']: 
+            setattr(inOut, i, getattr(self, i))
         
-        output.psie=DV[:,ind_psi]
-        output.T=DV[:,ind_T]
-        output.qT=DV[:,0]
-        output.jT=DV[:,1]
-        output.qB=DV[:,-2]
-        output.jB=DV[:,-1]
+        inOut.psie=DV[:,ind_psi]
+        inOut.T=DV[:,ind_T]
+        inOut.qT=DV[:,0]
+        inOut.jT=DV[:,1]
+        inOut.qB=DV[:,-2]
+        inOut.jB=DV[:,-1]
         
         i,j=T.shape
-        output.psif=np.array([GCEFun(output.T[i,:],parsD,constD) for i in range(self.nt)])
-        output.psif=np.minimum(output.psie,output.psif)
-        output.thetaL=np.array([thetaFun(output.psif[i,:],parsD) for i in range(self.nt)])
-        output.thetaT=np.array([thetaFun(output.psie[i,:],parsD) for i in range(self.nt)])
-        output.thetaI=self.const['rho_liq']/self.const['rho_ice']*(output.thetaT-output.thetaL)
-        
-        return output
+        inOut.psif=np.array([GCEFun(inOut.T[i,:],parsD,constD) for i in range(self.nt)])
+        inOut.psif=np.minimum(inOut.psie,inOut.psif)
+        inOut.thetaL=np.array([thetaFun(inOut.psif[i,:],parsD) for i in range(self.nt)])
+        inOut.thetaT=np.array([thetaFun(inOut.psie[i,:],parsD) for i in range(self.nt)])
+        inOut.thetaI=self.const['rho_liq']/self.const['rho_ice']*(inOut.thetaT-inOut.thetaL)
 
+        # Print mass/energy balance errors:
+        self.balanceClosure(inOut)
+        
+        return inOut
+
+    def balanceClosure(self,inOut):
+
+        nt,nz=inOut.thetaL.shape
+        ml=inOut.thetaL*inOut.dz*inOut.const['rho_liq']
+        mi=inOut.thetaI*inOut.dz*inOut.const['rho_ice']
+        ms=np.zeros((nt,nz))+((1-inOut.pars['thetaS'])*inOut.dz*inOut.pars['rho_soil'])
+        u=(ml*inOut.const['cp_liq']+mi*inOut.const['cp_ice']+ms*inOut.pars['cp_soil'])*inOut.T-mi*inOut.const['lambda_f']
+        ml=np.sum(ml,axis=1)
+        mi=np.sum(mi,axis=1)
+        u=np.sum(u,axis=1)
+        du=u[-1]-u[0]
+        m=ml+mi
+        dm=m[-1]-m[0]
+        qT=inOut.qT.sum()*inOut.const['rho_liq']
+        qB=inOut.qB.sum()*inOut.const['rho_liq']
+        jT=inOut.jT.sum()
+        jB=inOut.jB.sum()
+        print(f'    Mass balance error: {(qT-qB)/dm*100-100: .2e} %')
+        print(f'                        {(qT-qB-dm): .2e} kg')
+        print(f'  Energy balance error: {(jT-jB)/du*100-100: .2e} %')
+        print(f'                        {(jT-jB-du): .2e} J')
+        
+        inOut.u=u
+        inOut.m=m
+
+    
