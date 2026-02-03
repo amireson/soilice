@@ -12,7 +12,12 @@ Some demonstration simulations are provided [here](notebooks/readme.md).
 
 Optionally you might want to create a new python virtual environment before installing this (see [here](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/)).
 
-To install $\text{soilice}$ clone this repo. In the root folder then enter `pip install -e ".[dev]"`. Now you can import the model to use it from anywhere on your computer. With these options the package is installed in development mode, meaning you can edit the source code and the changes will be reflected wherever you use the imported package - making it easy to experiment with alternative constituitive relations and so on.
+To install directly from github, enter this command in your terminal/power shell:
+```
+pip install git+ssh://git@github.com/amireson/soilice.git
+```
+
+Alternatively, for an interactive installation, clone this repo. In the root folder then enter `pip install -e ".[dev]"`. Now you can import the model to use it from anywhere on your computer. With these options the package is installed in development mode, meaning you can edit the source code and the changes will be reflected wherever you use the imported package - making it easy to experiment with alternative constituitive relations and so on.
 
 # Running the testcases
 
