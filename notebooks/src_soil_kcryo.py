@@ -22,7 +22,7 @@ def CFun(psi,pars):
     return Se*pars['Ss']+(pars['thetaS']-pars['thetaR'])*dSedh
 
 ### MODIFIED ###
-@njit
+@njit(inline='always')
 def KFun(psie,psif,pars,const):
     # thetaL=sm.thetaFun(psif,pars)
     # thetaT=sm.thetaFun(psie,pars)
@@ -234,7 +234,7 @@ def ODEfunCall(t,DV,qI,TTop,TBot,TInf,jTopBC,dz,pars,const,opts,nz):
 
     if opts['simulateTransport']:
         jTopAdv=q[0]*const['cp_liq']*const['rho_liq']*TInf
-        jTopNonAdv=opts['groundHeatFlux']*jTopBC
+        jTopNonAdv=jTopBC
         dTdt,j=heatbalanceFun(t,psie,psif,T,TTop,TBot,jTopAdv,jTopNonAdv,dz,pars,const,opts,nz,dthetaTdt,q)
     else:
         dTdt=np.zeros(nz)
@@ -256,10 +256,84 @@ class modelInOut:
 
 
 class model:
-    def __init__(self,opts,rtol=1e-7):
+    def __init__(self,opts=None,rtol=1e-7):
         self.opts=opts
         self.rtol=rtol
+
+    def setOpts(self):
         
+        opts={}
+
+        # Solve correct equations (set to zero to remove Cdtheta/dt)
+        if (input('Solve correct mass balance equations, y/n? (default = y)').lower() or 'y')=='y':
+            opts['massflag']=1.
+        else:
+            opts['massflag']=0.
+
+        # Horizontal/vertical
+        if (input('Horizontal or vertical, h/v? (default = v)').lower() or 'v')=='v':
+            opts['gravity']=1.
+        else:
+            opts['gravity']=0.
+        
+        # Cryosuction (yes means gradient based on psif, no means gradient based on psie)
+        if (input('Include cryosuction, y/n? (default = n)').lower() or 'n')=='n':
+            opts['cryoflow']=0.
+        else:
+            opts['cryoflow']=1.
+
+        # Include advection
+        if (input('Include advection, y/n? (default = y)').lower() or 'y')=='y':
+            opts['withadv']=1.
+        else:
+            opts['withadv']=0.
+
+        # Conduction at the upper boundary based on TTop
+        if (input('Conduction, based on TTop, at upper boundary, y/n? (default = n)').lower() or 'n')=='n':
+            opts['conductionTop']=0.
+        else:
+            opts['conductionTop']=1.
+
+        # Conduction at the lower boundary based on TBot
+        if (input('Conduction, based on TBot, at lower boundary, y/n? (default = n)').lower() or 'n')=='n':
+            opts['conductionBot']=0.
+        else:
+            opts['conductionBot']=1.
+
+        # Simulate flow
+        if (input('Simulate flow, y/n? (default = y)').lower() or 'y')=='y':
+            opts['simulateFlow']=1.
+        else:
+            opts['simulateFlow']=0.
+
+        # Simulate heat transport
+        if (input('Simulate heat transport, y/n? (default = y)').lower() or 'y')=='y':
+            opts['simulateTransport']=1.
+        else:
+            opts['simulateTransport']=0.
+
+        # Simulate free Drainage
+        if (input('Simulate free drainage on lower boundary (n means no flow), y/n? (default = y)').lower() or 'y')=='y':
+            opts['freeDrainage']=1.
+        else:
+            opts['freeDrainage']=0.
+
+        self.opts=opts
+
+    def printOpts(self):
+        opts=self.opts
+        print('*************************************************************************\n     SUMMARY OF MODEL OPTIONS:')
+        
+        print(f'     * {'Solving correct mass bal eqns' if opts['massflag']==1  else 'Solving simplified mass bal eqns'}')
+        print(f'     * {'Vertical flow' if opts['gravity']==1  else 'Horizontal flow'}')
+        print(f'     * {'Includes cryosuction based flow' if opts['cryoflow']==1  else 'No cryosuction'}')
+        print(f'     * {'Included heat advection' if opts['withadv']==1  else 'No advection of heat'}')
+        print(f'     * {'Conduction on the upper boundary' if opts['conductionTop']==1  else 'No conduction on the upper boundary'}')
+        print(f'     * {'Conduction on the lower boundary' if opts['conductionBot']==1  else 'No conduction on the lower boundary'}')
+        print(f'     * {'Simulating flow' if opts['simulateFlow']==1  else 'No flow'}')
+        print(f'     * {'Simulating heat transport' if opts['simulateTransport']==1  else 'No heat transport'}')
+        print(f'     * {'Free draining lower boundary condition' if opts['freeDrainage']==1  else 'No (mass) flow lower boundary condition'}')
+        print('*************************************************************************\n')
     def setPars(self,pars):
         # Determine whether the soil parameters are uniform or not:
         uniform_pars=True
@@ -386,7 +460,9 @@ class model:
             DV[i+1,:]=r.y
     
         runtime=time.time()-tic
-        print('soilice ran successfully!')
+        
+        print('*************************************************************************')
+        print('     soilice ran successfully!')
         print('               runtime:     % .2f seconds'%(runtime))        
         # print(' ode, with jac runtime:     % .2f seconds'%(runtime))
 
@@ -414,7 +490,7 @@ class model:
 
         # Print mass/energy balance errors:
         self.balanceClosure(inOut)
-        
+        print('*************************************************************************\n')
         return inOut
 
     def balanceClosure(self,inOut):
