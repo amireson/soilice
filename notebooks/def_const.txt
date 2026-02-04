@@ -1,0 +1,16 @@
+   stefanBoltzmann, 5.670374419e-08
+           rho_liq, 1000.0
+           rho_ice, 918.0
+           rho_air, 1.293
+            cp_liq, 4180.0
+            cp_ice, 2100.0
+            cp_air, 1006.0
+         kappa_liq, 48384.00000000001
+         kappa_ice, 190080.00000000003
+         kappa_air, 2160.0
+          lambda_f, 334000.0
+          lambda_v, 2260000.0
+          lambda_s, 2835000.0
+                 g, 9.81
+                T0, 273.15
+                Tf, 0.0

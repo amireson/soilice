@@ -1,0 +1,17 @@
+            thetaR, 0.218
+            thetaS, 0.52
+             alpha, 1.15
+                 n, 2.03
+               eta, 0.5
+                Ks, 0.316
+              neta, 0.5
+                Ss, 1e-06
+                 m, 0.5073891625615763
+         theta_org, 0.0
+     theta_mineral, 0.48
+           cp_soil, 850.0
+            cp_org, 580.0
+        kappa_soil, 250560.0
+         kappa_org, 21600.0
+          rho_soil, 2600.0
+           rho_org, 1300.0

@@ -1,11 +1,31 @@
 #############################################
 #
-# USER SPECIFIED CONSTITUITIVE FUNCTIONS
-# Maybe editted
+# soilice - source code 
+# Andrew Ireson 
+# https://github.com/amireson/soilice
 #
 #############################################
+
+# Import statements
 import numpy as np
+
 from numba import njit 
+from numba import types
+from numba.typed import Dict
+
+import time
+from scipy.integrate import ode
+
+import dill
+import ast
+
+#############################################
+#
+# USER SPECIFIED CONSTITUITIVE FUNCTIONS
+# Maybe editted. 
+# Do not change function inputs/outputs
+#
+#############################################
 
 # Hydraulic properties:
 @njit(inline='always')
@@ -89,32 +109,12 @@ def CBFun(psie,psif,pars,const):
     CB=(const['cp_ice']*thetaI*const['rho_ice'])+(const['cp_liq']*thetaL*const['rho_liq'])+(pars['cp_soil']*thetaS*pars['rho_soil'])
     return CB
 
-
 #############################################
 #
-# MODEL CORE FUNCTIONS - do not edit below
+# CORE MODEL PHYSICS FUNCTIONS (edit with 
+# extreme caution)
 #
 #############################################
-import time
-from scipy.integrate import ode
-
-from numba import types
-from numba.typed import Dict
-
-import dill
-
-def MakeDictArray():
-    d=Dict.empty(
-    key_type=types.unicode_type,
-    value_type=types.float64[:],)
-    return d
-
-def MakeDictFloat():
-    d=Dict.empty(
-    key_type=types.unicode_type,
-    value_type=types.float64,)
-    return d
-
 
 @njit
 def Richards(t,psif,psie,dz,pars,const,opts,nz,qI):
@@ -208,7 +208,6 @@ def heatbalanceFun(t,psie,psif,T,TTop,TBot,jTopAdv,jTopNonAdv,dz,pars,const,opts
     
     return dTdt,j
 
-
 # Model function wrapper, called by ODE solver
 def ODEfun(t,DV,qI,TTop,TBot,TInf,jTopBC,dz,pars,const,opts,nz):
     return ODEfunCall(t,DV,qI,TTop,TBot,TInf,jTopBC,dz,pars,const,opts,nz)
@@ -250,6 +249,26 @@ def ODEfunCall(t,DV,qI,TTop,TBot,TInf,jTopBC,dz,pars,const,opts,nz):
 
     return dDVdt
 
+#############################################
+#
+# CONFIGURATION AND DATA HANDLING FUNCTIONS
+# Do not edit
+#
+#############################################
+
+def MakeDictArray():
+    d=Dict.empty(
+    key_type=types.unicode_type,
+    value_type=types.float64[:],)
+    return d
+
+def MakeDictFloat():
+    d=Dict.empty(
+    key_type=types.unicode_type,
+    value_type=types.float64,)
+    return d
+
+
 # class for saving model output
 class modelInOut:
     pass
@@ -259,7 +278,7 @@ class model:
     def __init__(self,opts=None,rtol=1e-7):
         self.opts=opts
         self.rtol=rtol
-
+            
     def setOpts(self):
         
         opts={}
@@ -334,6 +353,23 @@ class model:
         print(f'     * {'Simulating heat transport' if opts['simulateTransport']==1  else 'No heat transport'}')
         print(f'     * {'Free draining lower boundary condition' if opts['freeDrainage']==1  else 'No (mass) flow lower boundary condition'}')
         print('*************************************************************************\n')
+
+    def readPars(self,filename='def'):
+        # Read parameters and constants from text file.
+        filename=filename.replace('_pars','')
+        filename=filename.replace('_const','')
+        filename=filename.replace('.txt','')
+        
+        pars={}
+        for line in open(f'{filename}_pars.txt','r'): 
+            pars[line.split(',',1)[0].strip()]=ast.literal_eval(line.split(',',1)[1].strip())
+        self.setPars(pars)
+
+        const={}
+        for line in open(f'{filename}_const.txt','r'): 
+            const[line.split(',',1)[0].strip()]=ast.literal_eval(line.split(',',1)[1].strip())
+        self.const=const
+        
     def setPars(self,pars):
         # Determine whether the soil parameters are uniform or not:
         uniform_pars=True
@@ -378,7 +414,7 @@ class model:
         self.t=np.arange(0,tMax+dt,dt)
         self.nt=len(self.t)
         
-    def BCs(self,jTopBC=0,qI=0,TInf=0,TTop=0,TBot=0):
+    def setBCs(self,jTopBC=0,qI=0,TInf=0,TTop=0,TBot=0):
         
         def _to_timeseries(x):
             if np.ndim(x) == 0:        
@@ -392,7 +428,7 @@ class model:
         self.TTop   = _to_timeseries(TTop)
         self.TBot   = _to_timeseries(TBot)
 
-    def ICs(self,T0,psi0):
+    def setICs(self,T0,psi0):
 
         def _to_array(x):
             if np.ndim(x) == 0:
@@ -409,9 +445,14 @@ class model:
                 return x
 
         self.T0=_to_array(T0)
-        self.psi0=_to_array(psi0)
-        
-    # Run model
+        self.psi0=_to_array(psi0)    
+
+#############################################
+#
+# FUNCTION TO RUN MODEL
+# Do not edit
+#
+#############################################
     def run(self):
 
         uniform_pars=True
@@ -495,6 +536,11 @@ class model:
 
     def balanceClosure(self,inOut):
 
+        def err(qT,qB,dm):
+            rmse=np.sqrt(np.mean((qT-qB-dm)**2))
+            bias=(qT[-1]-qT[0])-(qB[-1]-qB[0])-dm[-1]
+            return rmse,bias
+        
         nt,nz=inOut.thetaL.shape
         ml=inOut.thetaL*inOut.dz*inOut.const['rho_liq']
         mi=inOut.thetaI*inOut.dz*inOut.const['rho_ice']
@@ -503,19 +549,51 @@ class model:
         ml=np.sum(ml,axis=1)
         mi=np.sum(mi,axis=1)
         u=np.sum(u,axis=1)
-        du=u[-1]-u[0]
+        du=u-u[0]
         m=ml+mi
-        dm=m[-1]-m[0]
-        qT=inOut.qT.sum()*inOut.const['rho_liq']
-        qB=inOut.qB.sum()*inOut.const['rho_liq']
-        jT=inOut.jT.sum()
-        jB=inOut.jB.sum()
-        print(f'    Mass balance error: {(qT-qB)/dm*100-100: .2e} %')
-        print(f'                        {(qT-qB-dm): .2e} kg')
-        print(f'  Energy balance error: {(jT-jB)/du*100-100: .2e} %')
-        print(f'                        {(jT-jB-du): .2e} J')
+        dm=m-m[0]
+        qT=inOut.qT.cumsum()*inOut.const['rho_liq']
+        qB=inOut.qB.cumsum()*inOut.const['rho_liq']
+        jT=inOut.jT.cumsum()
+        jB=inOut.jB.cumsum()
+        rmseW,biasW=err(qT,qB,dm)
+        rmseH,biasH=err(jT,jB,du)
+        
+        if self.opts['simulateFlow']:
+            print(f'     Mass balance rmse: {rmseW: .2e} kg')
+            print(f'                  bias: {biasW: .2e} kg')
+        if self.opts['simulateTransport']:
+            print(f'   Energy balance rmse: {rmseH: .2e} J')
+            print(f'                  bias: {biasH: .2e} J')
         
         inOut.u=u
         inOut.m=m
 
-    
+    def plotBalance(self,inOut):
+        import matplotlib.pyplot as pl
+        
+        t=inOut.t
+        nt,nz=inOut.thetaL.shape
+        ml=inOut.thetaL*inOut.dz*inOut.const['rho_liq']
+        mi=inOut.thetaI*inOut.dz*inOut.const['rho_ice']
+        ms=np.zeros((nt,nz))+((1-inOut.pars['thetaS'])*inOut.dz*inOut.pars['rho_soil'])
+        u=(ml*inOut.const['cp_liq']+mi*inOut.const['cp_ice']+ms*inOut.pars['cp_soil'])*inOut.T-mi*inOut.const['lambda_f']
+        ml=np.sum(ml,axis=1)
+        mi=np.sum(mi,axis=1)
+        u=np.sum(u,axis=1)
+        du=u-u[0]
+        m=ml+mi
+        dm=m-m[0]
+        qT=inOut.qT.cumsum()*inOut.const['rho_liq']
+        qB=inOut.qB.cumsum()*inOut.const['rho_liq']
+        jT=inOut.jT.cumsum()
+        jB=inOut.jB.cumsum()
+        pl.subplot(2,1,1)
+        pl.plot(t,qT-qB,'.',label='Net water balance flux')
+        pl.plot(t,dm,'-',label='Cumulative change in mass')
+        pl.grid(); pl.legend()
+        pl.subplot(2,1,2)
+        pl.plot(t,jT-jB,'.',label='Net heat balance flux')
+        pl.plot(t,du,'-',label='Cumulative change in internal energy')
+        pl.grid(); pl.legend()
+        
