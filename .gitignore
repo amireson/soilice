@@ -17,3 +17,5 @@ dist/
 
 # Jupyter Notebook checkpoints
 .ipynb_checkpoints/
+
+experiments
