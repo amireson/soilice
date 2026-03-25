@@ -74,16 +74,10 @@ def thermalKfun(psie,psif,T,pars,const):
 
 # Slope function dtheta_L/dT
 @njit(inline='always')
-def SFCslope(T,pars,const):
-    psi=GCEFun(T,pars,const)
-    
+def SFCslope(psie,psif,pars,const):
     C=const['lambda_f']/const['g']/const['T0']
-    U=1+np.abs(pars['alpha']*C*T)**pars['n']
-    dthdSe=(pars['thetaS']-pars['thetaR'])
-    dSedu=-pars['m']*U**(-pars['m']-1)  
-    dudT=pars['n']*(pars['alpha']*C)**pars['n']*(np.abs(T))**(pars['n']-1)
-    dthdT=-dthdSe*dSedu*dudT
-    dthdT[T>0]=0. 
+    dthdpsi=CFun(psif,pars)
+    dthdT=C*dthdpsi
     return dthdT
     
 # GCE
@@ -122,9 +116,7 @@ def Richards(t,psif,psie,dz,pars,const,opts,nz,qI):
     q=np.zeros(nz+1)
     
     # Upper boundary: infiltration rate
-    psiTop=np.minimum(psie[0],0)
-    # qImax=-pars['Ks']*(psiTop/(dz[0]/2)-1)
-    qImax=-K[0]*(psiTop/(dz[0]/2)-1)
+    qImax=-K[0]*(psie[0]/(dz[0]/2)-1)
     
     # q[0]=qI # 
     q[0]=np.minimum(qI,qImax)
@@ -184,7 +176,7 @@ def heatbalanceFun(t,psie,psif,T,TTop,TBot,jTopAdv,jTopNonAdv,dz,pars,const,opts
     j=jd+opts['withadv']*ja
     
     # Heat balance terms:
-    Fdash=SFCslope(T,pars,const)
+    Fdash=SFCslope(psie,psif,pars,const)
     CB=CBFun(psie,psif,pars,const)
 
     fluxDiv=-(j[1:]-j[:-1])/dz
