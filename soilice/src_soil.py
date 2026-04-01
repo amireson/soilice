@@ -12,6 +12,7 @@ import numpy as np
 from numba import njit 
 from numba import types
 from numba.typed import Dict
+from numba.experimental import jitclass
 
 import time
 from scipy.integrate import ode
@@ -26,77 +27,81 @@ import ast
 # Do not change function inputs/outputs
 #
 #############################################
+@jitclass([])
+class constitutiveFunctions:
+    def __init__(self):
+        pass
 
-# Hydraulic properties:
-@njit(inline='always')
-def thetaFun(psi,pars):
-    Se=(1+(psi*-pars['alpha'])**pars['n'])**(-pars['m'])
-    Se[psi>0.]=1.0
-    return pars['thetaR']+(pars['thetaS']-pars['thetaR'])*Se
+    # Hydraulic properties:
+    #@njit(inline='always')
+    def thetaFun(self,psi,pars):
+        Se=(1+(psi*-pars['alpha'])**pars['n'])**(-pars['m'])
+        Se[psi>0.]=1.0
+        return pars['thetaR']+(pars['thetaS']-pars['thetaR'])*Se
 
-@njit(inline='always')
-def CFun(psi,pars):
-    Se=(1+(psi*-pars['alpha'])**pars['n'])**(-pars['m'])
-    Se[psi>0.]=1.0
-    dSedh=pars['alpha']*pars['m']/(1-pars['m'])*Se**(1/pars['m'])*(1-Se**(1/pars['m']))**pars['m']
-    return Se*pars['Ss']+(pars['thetaS']-pars['thetaR'])*dSedh
+    #@njit(inline='always')
+    def CFun(self,psi,pars):
+        Se=(1+(psi*-pars['alpha'])**pars['n'])**(-pars['m'])
+        Se[psi>0.]=1.0
+        dSedh=pars['alpha']*pars['m']/(1-pars['m'])*Se**(1/pars['m'])*(1-Se**(1/pars['m']))**pars['m']
+        return Se*pars['Ss']+(pars['thetaS']-pars['thetaR'])*dSedh
 
-@njit(inline='always')
-def KFun(psie,psif,pars,const):
-    # Impedance model for K after Taylor and Luthin
-    thetaL=thetaFun(psif,pars)
-    thetaT=thetaFun(psie,pars)
-    thetaI=const['rho_liq']/const['rho_ice']*(thetaT-thetaL)
+    #@njit(inline='always')
+    def KFun(self,psie,psif,pars,const):
+        # Impedance model for K after Taylor and Luthin
+        thetaL=self.thetaFun(psif,pars)
+        thetaT=self.thetaFun(psie,pars)
+        thetaI=const['rho_liq']/const['rho_ice']*(thetaT-thetaL)
 
-    Se=(1+(psie*-pars['alpha'])**pars['n'])**(-pars['m'])
-    Se[psie>0.]=1.0
-    Ke=pars['Ks']*Se**pars['neta']*(1-(1-Se**(1/pars['m']))**pars['m'])**2
+        Se=(1+(psie*-pars['alpha'])**pars['n'])**(-pars['m'])
+        Se[psie>0.]=1.0
+        Ke=pars['Ks']*Se**pars['neta']*(1-(1-Se**(1/pars['m']))**pars['m'])**2
 
-    K=Ke*10**(-10*thetaI)
+        K=Ke*10**(-10*thetaI)
 
-    return K
+        return K
 
-# Thermal conductivity function
-@njit(inline='always')
-def thermalKfun(psie,psif,T,pars,const):
-    # Uses geometric mean of each component
-    thetaL=thetaFun(psif,pars)
-    thetaT=thetaFun(psie,pars)
-    thetaI=const['rho_liq']/const['rho_ice']*(thetaT-thetaL)
-    thetaA=pars['thetaS']-thetaT
-    kappa = (
-        (const['kappa_liq'] ** thetaL) *
-        (const['kappa_ice'] ** thetaI) *
-        (const['kappa_air'] ** thetaA) *
-        (pars['kappa_soil'] ** pars['theta_mineral'])*
-        (pars['kappa_org'] ** pars['theta_org']))
-    return kappa
+    # Thermal conductivity function
+    #@njit(inline='always')
+    def thermalKfun(self,psie,psif,T,pars,const):
+        # Uses geometric mean of each component
+        thetaL=self.thetaFun(psif,pars)
+        thetaT=self.thetaFun(psie,pars)
+        thetaI=const['rho_liq']/const['rho_ice']*(thetaT-thetaL)
+        thetaA=pars['thetaS']-thetaT
+        kappa = (
+            (const['kappa_liq'] ** thetaL) *
+            (const['kappa_ice'] ** thetaI) *
+            (const['kappa_air'] ** thetaA) *
+            (pars['kappa_soil'] ** pars['theta_mineral'])*
+            (pars['kappa_org'] ** pars['theta_org']))
+        return kappa
 
-# Slope function dtheta_L/dT
-@njit(inline='always')
-def SFCslope(psie,psif,pars,const):
-    C=const['lambda_f']/const['g']/const['T0']
-    dthdpsi=CFun(psif,pars)
-    dthdT=C*dthdpsi
-    return dthdT
-    
-# GCE
-@njit(inline='always')
-def GCEFun(T,pars,const):
-    psi=T*const['lambda_f']/(const['g']*const['T0'])
-    psi[psi>0]=0.
-    return psi
+    # Slope function dtheta_L/dT
+    #@njit(inline='always')
+    def SFCslope(self,psie,psif,pars,const):
+        C=const['lambda_f']/const['g']/const['T0']
+        dthdpsi=self.CFun(psif,pars)
+        dthdT=C*dthdpsi
+        return dthdT
+        
+    # GCE
+    #@njit(inline='always')
+    def GCEFun(self,T,pars,const):
+        psi=T*const['lambda_f']/(const['g']*const['T0'])
+        psi[psi>0]=0.
+        return psi
 
-# Bulk heat capacity function
-@njit(inline='always')
-def CBFun(psie,psif,pars,const):
-    thetaL=thetaFun(psif,pars)
-    thetaT=thetaFun(psie,pars)
-    thetaI=const['rho_liq']/const['rho_ice']*(thetaT-thetaL)
-    thetaS=1-pars['thetaS']
-    #thetaA=thetaS-thetaT
-    CB=(const['cp_ice']*thetaI*const['rho_ice'])+(const['cp_liq']*thetaL*const['rho_liq'])+(pars['cp_soil']*thetaS*pars['rho_soil'])
-    return CB
+    # Bulk heat capacity function
+    #@njit(inline='always')
+    def CBFun(self,psie,psif,pars,const):
+        thetaL=self.thetaFun(psif,pars)
+        thetaT=self.thetaFun(psie,pars)
+        thetaI=const['rho_liq']/const['rho_ice']*(thetaT-thetaL)
+        thetaS=1-pars['thetaS']
+        #thetaA=thetaS-thetaT
+        CB=(const['cp_ice']*thetaI*const['rho_ice'])+(const['cp_liq']*thetaL*const['rho_liq'])+(pars['cp_soil']*thetaS*pars['rho_soil'])
+        return CB
 
 #############################################
 #
@@ -106,11 +111,12 @@ def CBFun(psie,psif,pars,const):
 #############################################
 
 @njit
-def Richards(t,psif,psie,dz,pars,const,opts,nz,qI):
+def Richards(t,psif,psie,dz,pars,const,opts,nz,upperBC,cF):
 
     # Get hydraulic conductivity
-    K=KFun(psie,psif,pars,const)
+    K=cF.KFun(psie,psif,pars,const)
     Kmid=(K[:-1]+K[1:])/2.0
+    Ksurf=cF.KFun(np.array([upperBC]),np.array([upperBC]),pars,const)
 
     # initialize vectors:
     q=np.zeros(nz+1)
@@ -119,7 +125,9 @@ def Richards(t,psif,psie,dz,pars,const,opts,nz,qI):
     qImax=-K[0]*(psie[0]/(dz[0]/2)-1)
     
     # q[0]=qI # 
-    q[0]=np.minimum(qI,qImax)
+    q[0]=np.minimum(upperBC,qImax)*opts['infiltration']
+    #q[0]+= -K[0]*((psie[0]-upperBC)/(dz[0]/2)-1)*(1-opts['infiltration'])
+    q[0]+= -(Ksurf[0]+K[0])/2*((psie[0]-upperBC)/(dz[0]/2)-1)*(1-opts['infiltration'])
     
     # lower boundary: free (gravity) drainage 
     q[-1]=K[-1]*opts['gravity']*opts['freeDrainage']
@@ -129,7 +137,7 @@ def Richards(t,psif,psie,dz,pars,const,opts,nz,qI):
     normflow=-Kmid*((psie[1:]-psie[:-1])/((dz[1:]+dz[:-1])/2)-opts['gravity'])
     q[1:-1]=opts['cryoflow']*cryoflow+(1-opts['cryoflow'])*normflow
 
-    C=CFun(psie,pars)
+    C=cF.CFun(psie,pars)
     
     # continuity
     dthetaTdt=-(q[1:]-q[:-1])/dz       
@@ -138,10 +146,10 @@ def Richards(t,psif,psie,dz,pars,const,opts,nz,qI):
     return dthetaTdt,dpsiedt,q
 
 @njit
-def heatbalanceFun(t,psie,psif,T,TTop,TBot,jTopAdv,jTopNonAdv,dz,pars,const,opts,nz,dthetaTdt,q):
+def heatbalanceFun(t,psie,psif,T,TTop,TBot,jTopAdv,jTopNonAdv,dz,pars,const,opts,nz,dthetaTdt,q,cF):
 
     # Determine the thermal cond and heat capacity for given temperature
-    kappa=thermalKfun(psie,psif,T,pars,const)
+    kappa=cF.thermalKfun(psie,psif,T,pars,const)
     
     # Calculate the conductive heat flux:
     jd=np.zeros(nz+1)
@@ -176,8 +184,8 @@ def heatbalanceFun(t,psie,psif,T,TTop,TBot,jTopAdv,jTopNonAdv,dz,pars,const,opts
     j=jd+opts['withadv']*ja
     
     # Heat balance terms:
-    Fdash=SFCslope(psie,psif,pars,const)
-    CB=CBFun(psie,psif,pars,const)
+    Fdash=cF.SFCslope(psie,psif,pars,const)
+    CB=cF.CBFun(psie,psif,pars,const)
 
     fluxDiv=-(j[1:]-j[:-1])/dz
     
@@ -196,32 +204,32 @@ def heatbalanceFun(t,psie,psif,T,TTop,TBot,jTopAdv,jTopNonAdv,dz,pars,const,opts
     return dTdt,j
 
 # Model function wrapper, called by ODE solver
-def ODEfun(t,DV,qI,TTop,TBot,TInf,jTopBC,dz,pars,const,opts,nz):
-    return ODEfunCall(t,DV,qI,TTop,TBot,TInf,jTopBC,dz,pars,const,opts,nz)
+def ODEfun(t,DV,upperBC,TTop,TBot,TInf,jTopBC,dz,pars,const,opts,nz,cF):
+    return ODEfunCall(t,DV,upperBC,TTop,TBot,TInf,jTopBC,dz,pars,const,opts,nz,cF)
 
 # Model function
 @njit
-def ODEfunCall(t,DV,qI,TTop,TBot,TInf,jTopBC,dz,pars,const,opts,nz):
+def ODEfunCall(t,DV,upperBC,TTop,TBot,TInf,jTopBC,dz,pars,const,opts,nz,cF):
 
     ind_psi=np.arange(nz)*2+2
     ind_T=np.arange(nz)*2+3
     psie=DV[ind_psi]
     T=DV[ind_T]
     
-    psif=GCEFun(T,pars,const)
+    psif=cF.GCEFun(T,pars,const)
     psif=np.minimum(psie,psif)
 
     if opts['simulateFlow']:
-        dthetaTdt,dpsiedt,q=Richards(t,psif,psie,dz,pars,const,opts,nz,qI)
+        dthetaTdt,dpsiedt,q=Richards(t,psif,psie,dz,pars,const,opts,nz,upperBC,cF)
     else:
         dthetaTdt=np.zeros(nz)
         dpsiedt=np.zeros(nz)
-        q=np.zeros(nz+1)
+        q=np.full(nz+1,pars['q'])
 
     if opts['simulateTransport']:
         jTopAdv=q[0]*const['cp_liq']*const['rho_liq']*TInf
         jTopNonAdv=jTopBC
-        dTdt,j=heatbalanceFun(t,psie,psif,T,TTop,TBot,jTopAdv,jTopNonAdv,dz,pars,const,opts,nz,dthetaTdt,q)
+        dTdt,j=heatbalanceFun(t,psie,psif,T,TTop,TBot,jTopAdv,jTopNonAdv,dz,pars,const,opts,nz,dthetaTdt,q,cF)
     else:
         dTdt=np.zeros(nz)
         j=np.zeros(nz+1)
@@ -262,67 +270,69 @@ class modelInOut:
 
 
 class model:
-    def __init__(self,opts=None,rtol=1e-7):
+    def __init__(self,opts=None,rtol=1e-7,cF=constitutiveFunctions):
         self.opts=opts
         self.rtol=rtol
+        self.cF = cF()
             
     def setOpts(self):
         
+        def AskQuestion(question,default,trueVal):
+            answer=input(question).lower()
+            answer=default if answer == '' else answer
+            return 1.0 if answer == trueVal else 0.0
+
         opts={}
 
         # Solve correct equations (set to zero to remove Cdtheta/dt)
-        if (input('Solve correct mass balance equations, y/n? (default = y)').lower() or 'y')=='y':
-            opts['massflag']=1.
-        else:
-            opts['massflag']=0.
+        opts['massflag']=AskQuestion(
+                'Solve correct mass balance equations, y/n? (default = y)',
+                'y', 'y')
 
         # Horizontal/vertical
-        if (input('Horizontal or vertical, h/v? (default = v)').lower() or 'v')=='v':
-            opts['gravity']=1.
-        else:
-            opts['gravity']=0.
+        opts['gravity']=AskQuestion(
+                'Horizontal or vertical, h/v? (default = v)',
+                'v','v')
+        
+        # Infiltration or fixed psi at upper boundary:
+        opts['infiltration']=AskQuestion(
+                'Infiltration at upper boundary (n means fixed psi), y/n? (default = y)',
+                'y', 'y')
         
         # Cryosuction (yes means gradient based on psif, no means gradient based on psie)
-        if (input('Include cryosuction, y/n? (default = n)').lower() or 'n')=='n':
-            opts['cryoflow']=0.
-        else:
-            opts['cryoflow']=1.
+        opts['cryoflow']=AskQuestion(
+                'Include cryosuction, y/n? (default = n)',
+                'n','y')
 
         # Include advection
-        if (input('Include advection, y/n? (default = y)').lower() or 'y')=='y':
-            opts['withadv']=1.
-        else:
-            opts['withadv']=0.
+        opts['withadv']=AskQuestion(
+                'Include advection, y/n? (default = y)',
+                'y', 'y')
 
         # Conduction at the upper boundary based on TTop
-        if (input('Conduction, based on TTop, at upper boundary, y/n? (default = n)').lower() or 'n')=='n':
-            opts['conductionTop']=0.
-        else:
-            opts['conductionTop']=1.
+        opts['conductionTop']=AskQuestion(
+                'Conduction, based on TTop, at upper boundary, y/n? (default = n)',
+                'n','y')
 
         # Conduction at the lower boundary based on TBot
-        if (input('Conduction, based on TBot, at lower boundary, y/n? (default = n)').lower() or 'n')=='n':
-            opts['conductionBot']=0.
-        else:
-            opts['conductionBot']=1.
+        opts['conductionBot']=AskQuestion(
+                'Conduction, based on TBop, at lower boundary, y/n? (default = n)',
+                'n','y')
 
         # Simulate flow
-        if (input('Simulate flow, y/n? (default = y)').lower() or 'y')=='y':
-            opts['simulateFlow']=1.
-        else:
-            opts['simulateFlow']=0.
+        opts['simulateFlow']=AskQuestion(
+                'Simulate flow, y/n? (default = y)',
+                'y','y')
 
         # Simulate heat transport
-        if (input('Simulate heat transport, y/n? (default = y)').lower() or 'y')=='y':
-            opts['simulateTransport']=1.
-        else:
-            opts['simulateTransport']=0.
+        opts['simulateTransport']=AskQuestion(
+                'Simulate heat transport, y/n? (default = y)',
+                'y','y')
 
         # Simulate free Drainage
-        if (input('Simulate free drainage on lower boundary (n means no flow), y/n? (default = y)').lower() or 'y')=='y':
-            opts['freeDrainage']=1.
-        else:
-            opts['freeDrainage']=0.
+        opts['freeDrainage']=AskQuestion(
+                'Simulate free drainage on lower boundary (n means no flow), y/n? (default = y)',
+                'y','y')
 
         self.opts=opts
 
@@ -332,6 +342,7 @@ class model:
         
         print(f'     * {'Solving correct mass bal eqns' if opts['massflag']==1  else 'Solving simplified mass bal eqns'}')
         print(f'     * {'Vertical flow' if opts['gravity']==1  else 'Horizontal flow'}')
+        print(f'     * {'Infiltration at ground surface' if opts['infiltration']==1  else 'Fixed psi at ground surface'}')
         print(f'     * {'Includes cryosuction based flow' if opts['cryoflow']==1  else 'No cryosuction'}')
         print(f'     * {'Included heat advection' if opts['withadv']==1  else 'No advection of heat'}')
         print(f'     * {'Conduction on the upper boundary' if opts['conductionTop']==1  else 'No conduction on the upper boundary'}')
@@ -401,7 +412,7 @@ class model:
         self.t=np.arange(0,tMax+dt,dt)
         self.nt=len(self.t)
         
-    def setBCs(self,jTopBC=0,qI=0,TInf=0,TTop=0,TBot=0):
+    def setBCs(self,jTopBC=0,qI=0,psiT=0,TInf=0,TTop=0,TBot=0):
         
         def _to_timeseries(x):
             if np.ndim(x) == 0:        
@@ -411,6 +422,7 @@ class model:
 
         self.jTopBC = _to_timeseries(jTopBC)
         self.qI     = _to_timeseries(qI)
+        self.psiT   = _to_timeseries(psiT)
         self.TInf   = _to_timeseries(TInf)
         self.TTop   = _to_timeseries(TTop)
         self.TBot   = _to_timeseries(TBot)
@@ -460,6 +472,11 @@ class model:
         for k in self.const: constD[k]=self.const[k]
         optsD=MakeDictFloat()
         for k in self.opts: optsD[k]=self.opts[k]
+
+        if self.opts['infiltration']:
+            self.upperBC=self.qI
+        else:
+            self.upperBC=self.psiT
         
         T=np.zeros((self.nt,self.nz))
         T[0,:]=self.T0
@@ -481,7 +498,7 @@ class model:
         for i in range(self.nt-1):
             
             r.set_initial_value(np.hstack([0,0,DV[i,2:-2],0,0]), 0)
-            params=(self.qI[i],self.TTop[i],self.TBot[i],self.TInf[i],self.jTopBC[i],self.dz,parsD,constD,optsD,self.nz)
+            params=(self.upperBC[i],self.TTop[i],self.TBot[i],self.TInf[i],self.jTopBC[i],self.dz,parsD,constD,optsD,self.nz,self.cF)
             
             r.set_f_params(*params)
             r.integrate(self.dt)
@@ -498,7 +515,7 @@ class model:
         inOut=modelInOut()
         for i in ['dt','nt','t','dz','nz','z','z0','zMax',
                   'pars','const',
-                  'jTopBC','qI','TInf','TTop','TBot',
+                  'jTopBC','upperBC','TInf','TTop','TBot',
                   'T0','psi0','opts','rtol']: 
             setattr(inOut, i, getattr(self, i))
         
@@ -510,10 +527,10 @@ class model:
         inOut.jB=DV[:,-1]
         
         i,j=T.shape
-        inOut.psif=np.array([GCEFun(inOut.T[i,:],parsD,constD) for i in range(self.nt)])
+        inOut.psif=np.array([self.cF.GCEFun(inOut.T[i,:],parsD,constD) for i in range(self.nt)])
         inOut.psif=np.minimum(inOut.psie,inOut.psif)
-        inOut.thetaL=np.array([thetaFun(inOut.psif[i,:],parsD) for i in range(self.nt)])
-        inOut.thetaT=np.array([thetaFun(inOut.psie[i,:],parsD) for i in range(self.nt)])
+        inOut.thetaL=np.array([self.cF.thetaFun(inOut.psif[i,:],parsD) for i in range(self.nt)])
+        inOut.thetaT=np.array([self.cF.thetaFun(inOut.psie[i,:],parsD) for i in range(self.nt)])
         inOut.thetaI=self.const['rho_liq']/self.const['rho_ice']*(inOut.thetaT-inOut.thetaL)
 
         # Print mass/energy balance errors:

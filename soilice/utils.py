@@ -50,6 +50,9 @@ def writeDefaultPars(daily=True,filename='def'):
     pars['rho_soil']=2600.        # kg/m3 changed 
     pars['rho_org']=1300.         # kg/m3 added
 
+    # Misc
+    pars['q']=0.                            # Default flow rate when not solving RE
+
     const = {}
     const['stefanBoltzmann']=5.670374419e-8 # J/m2/s/K
     const['rho_liq']=1000.                  # Density of liquid water kg/m3

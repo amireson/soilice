@@ -29,3 +29,4 @@ pars['rho_org']=1300.         # kg/m3 added
 
 # Misc
 pars['a']=-0.5                # exponent in the thermal conductivity model (between -1 and 1 and not 0)
+pars['q']=0.                  # default value for flow rate when not solving RE
