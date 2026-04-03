@@ -20,25 +20,24 @@ from scipy.integrate import ode
 import dill
 import ast
 
-
+# First try to import constitutive functions from the local folder, where
+# the user may put custom functions. If the customized file does not exist
+# import the default functions
 try:
-    # Import local functions if they exist
-    from src_constitutiveFunctions import (
-        thetaFun, CFun, KFun,
-        thermalKfun, SFCslope, GCEFun, CBFun
-    )
+    from src_constitutiveFunctions import ( 
+        thetaFun, CFun, KFun, thermalKfun, SFCslope, GCEFun, CBFun )
 except ImportError:
-    # Otherwise import from soilice package
-    from soilice.src_constitutiveFunctions import (
-        thetaFun, CFun, KFun,
-        thermalKfun, SFCslope, GCEFun, CBFun
-    )
+    from soilice.src_constitutiveFunctions import ( 
+        thetaFun, CFun, KFun, thermalKfun, SFCslope, GCEFun, CBFun )
     
+# As above if user specified edits to the conservation equations exist
+# import these, otherwise import the defaults
 try: 
     from src_physics import Richards, heatbalanceFun, ODEfunCall
 except ImportError:
     from soilice.src_physics import Richards, heatbalanceFun, ODEfunCall
 
+from .utils import modelInOut
 
 #############################################
 #
@@ -59,15 +58,11 @@ def MakeDictFloat():
     value_type=types.float64,)
     return d
 
-
-# class for saving model output
-class modelInOut:
-    pass
-
 # Model function wrapper, called by ODE solver
 def ODEfun(t,DV,upperBC,TTop,TBot,TInf,jTopBC,dz,pars,const,opts,nz):
     return ODEfunCall(t,DV,upperBC,TTop,TBot,TInf,jTopBC,dz,pars,const,opts,nz)
 
+# Main class that setups and runs the model
 class model:
     def __init__(self,opts=None,rtol=1e-7):
         self.opts=opts
@@ -252,6 +247,27 @@ class model:
 #############################################
     def run(self):
 
+        print("""
+                                    iiii  lllllll   iiii
+                                   i::::i l:::::l  i::::i
+                                    iiii  l:::::l   iiii
+                                          l:::::l
+    ssssssssss      ooooooooooo   iiiiiii  l::::l iiiiiii     cccccccccccccccc    eeeeeeeeeeee
+  ss::::::::::s   oo:::::::::::oo i:::::i  l::::l i:::::i   cc:::::::::::::::c  ee::::::::::::ee
+ss:::::::::::::s o:::::::::::::::o i::::i  l::::l  i::::i  c:::::::::::::::::c e::::::eeeee:::::ee
+s::::::ssss:::::so:::::ooooo:::::o i::::i  l::::l  i::::i c:::::::cccccc:::::ce::::::e     e:::::e
+ s:::::s  ssssss o::::o     o::::o i::::i  l::::l  i::::i c::::::c     ccccccce:::::::eeeee::::::e
+   s::::::s      o::::o     o::::o i::::i  l::::l  i::::i c:::::c             e:::::::::::::::::e
+      s::::::s   o::::o     o::::o i::::i  l::::l  i::::i c:::::c             e::::::eeeeeeeeeee
+ssssss   s:::::s o::::o     o::::o i::::i  l::::l  i::::i c::::::c     ccccccce:::::::e
+s:::::ssss::::::so:::::ooooo:::::oi::::::il::::::li::::::ic:::::::cccccc:::::ce::::::::e
+s::::::::::::::s o:::::::::::::::oi::::::il::::::li::::::i c:::::::::::::::::c e::::::::eeeeeeee
+ s:::::::::::ss   oo:::::::::::oo i::::::il::::::li::::::i  cc:::::::::::::::c  ee:::::::::::::e
+  sssssssssss       ooooooooooo   iiiiiiiilllllllliiiiiiii    cccccccccccccccc    eeeeeeeeeeeeee
+
+... please wait, model is running...
+                """)
+
         uniform_pars=True
         for k in self.pars:
             if np.ndim(self.pars[k])>0:
@@ -337,70 +353,11 @@ class model:
         inOut.thetaI=self.const['rho_liq']/self.const['rho_ice']*(inOut.thetaT-inOut.thetaL)
 
         # Print mass/energy balance errors:
-        self.balanceClosure(inOut)
+        inOut.balanceClosure()
         print('*************************************************************************\n')
         return inOut
 
-    def balanceClosure(self,inOut):
 
-        def err(qT,qB,dm):
-            rmse=np.sqrt(np.mean((qT-qB-dm)**2))
-            bias=(qT[-1]-qT[0])-(qB[-1]-qB[0])-dm[-1]
-            return rmse,bias
-        
-        nt,nz=inOut.thetaL.shape
-        ml=inOut.thetaL*inOut.dz*inOut.const['rho_liq']
-        mi=inOut.thetaI*inOut.dz*inOut.const['rho_ice']
-        ms=np.zeros((nt,nz))+((1-inOut.pars['thetaS'])*inOut.dz*inOut.pars['rho_soil'])
-        u=(ml*inOut.const['cp_liq']+mi*inOut.const['cp_ice']+ms*inOut.pars['cp_soil'])*inOut.T-mi*inOut.const['lambda_f']
-        ml=np.sum(ml,axis=1)
-        mi=np.sum(mi,axis=1)
-        u=np.sum(u,axis=1)
-        du=u-u[0]
-        m=ml+mi
-        dm=m-m[0]
-        qT=inOut.qT.cumsum()*inOut.const['rho_liq']
-        qB=inOut.qB.cumsum()*inOut.const['rho_liq']
-        jT=inOut.jT.cumsum()
-        jB=inOut.jB.cumsum()
-        rmseW,biasW=err(qT,qB,dm)
-        rmseH,biasH=err(jT,jB,du)
-        
-        if self.opts['simulateFlow']:
-            print(f'     Mass balance rmse: {rmseW: .2e} kg')
-            print(f'                  bias: {biasW: .2e} kg')
-        if self.opts['simulateTransport']:
-            print(f'   Energy balance rmse: {rmseH: .2e} J')
-            print(f'                  bias: {biasH: .2e} J')
-        
-        inOut.u=u
-        inOut.m=m
 
-    def plotBalance(self,inOut):
-        import matplotlib.pyplot as pl
-        
-        t=inOut.t
-        nt,nz=inOut.thetaL.shape
-        ml=inOut.thetaL*inOut.dz*inOut.const['rho_liq']
-        mi=inOut.thetaI*inOut.dz*inOut.const['rho_ice']
-        ms=np.zeros((nt,nz))+((1-inOut.pars['thetaS'])*inOut.dz*inOut.pars['rho_soil'])
-        u=(ml*inOut.const['cp_liq']+mi*inOut.const['cp_ice']+ms*inOut.pars['cp_soil'])*inOut.T-mi*inOut.const['lambda_f']
-        ml=np.sum(ml,axis=1)
-        mi=np.sum(mi,axis=1)
-        u=np.sum(u,axis=1)
-        du=u-u[0]
-        m=ml+mi
-        dm=m-m[0]
-        qT=inOut.qT.cumsum()*inOut.const['rho_liq']
-        qB=inOut.qB.cumsum()*inOut.const['rho_liq']
-        jT=inOut.jT.cumsum()
-        jB=inOut.jB.cumsum()
-        pl.subplot(2,1,1)
-        pl.plot(t,qT-qB,'.',label='Net water balance flux')
-        pl.plot(t,dm,'-',label='Cumulative change in mass')
-        pl.grid(); pl.legend()
-        pl.subplot(2,1,2)
-        pl.plot(t,jT-jB,'.',label='Net heat balance flux')
-        pl.plot(t,du,'-',label='Cumulative change in internal energy')
-        pl.grid(); pl.legend()
-        
+       
+

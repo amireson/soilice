@@ -1,4 +1,6 @@
 import dill
+import numpy as np
+import matplotlib.pyplot as pl
 
 def save(filename,output):
     from .src_soil import modelInOut
@@ -78,3 +80,73 @@ def writeDefaultPars(daily=True,filename='def'):
     f=open(f'{filename}_const.txt','w')
     for k in const: f.write(f'{k:>18}, {const[k]}\n')
     f.close()
+
+# class for saving model output
+class modelInOut:
+    def __init__(self):
+        pass
+
+    # Balance closure functions:
+    def balanceClosure(self):
+
+        def err(qT,qB,dm):
+            rmse=np.sqrt(np.mean((qT-qB-dm)**2))
+            bias=(qT[-1]-qT[0])-(qB[-1]-qB[0])-dm[-1]
+            return rmse,bias
+        
+        nt,nz=self.thetaL.shape
+        ml=self.thetaL*self.dz*self.const['rho_liq']
+        mi=self.thetaI*self.dz*self.const['rho_ice']
+        ms=np.zeros((nt,nz))+((1-self.pars['thetaS'])*self.dz*self.pars['rho_soil'])
+        u=(ml*self.const['cp_liq']+mi*self.const['cp_ice']+ms*self.pars['cp_soil'])*self.T-mi*self.const['lambda_f']
+        ml=np.sum(ml,axis=1)
+        mi=np.sum(mi,axis=1)
+        u=np.sum(u,axis=1)
+        du=u-u[0]
+        m=ml+mi
+        dm=m-m[0]
+        qT=self.qT.cumsum()*self.const['rho_liq']
+        qB=self.qB.cumsum()*self.const['rho_liq']
+        jT=self.jT.cumsum()
+        jB=self.jB.cumsum()
+        rmseW,biasW=err(qT,qB,dm)
+        rmseH,biasH=err(jT,jB,du)
+        
+        if self.opts['simulateFlow']:
+            print(f'     Mass balance rmse: {rmseW: .2e} kg')
+            print(f'                  bias: {biasW: .2e} kg')
+        if self.opts['simulateTransport']:
+            print(f'   Energy balance rmse: {rmseH: .2e} J')
+            print(f'                  bias: {biasH: .2e} J')
+        
+        self.u=u
+        self.m=m
+
+
+    def plotBalance(self):
+        
+        t=self.t
+        nt,nz=self.thetaL.shape
+        ml=self.thetaL*self.dz*self.const['rho_liq']
+        mi=self.thetaI*self.dz*self.const['rho_ice']
+        ms=np.zeros((nt,nz))+((1-self.pars['thetaS'])*self.dz*self.pars['rho_soil'])
+        u=(ml*self.const['cp_liq']+mi*self.const['cp_ice']+ms*self.pars['cp_soil'])*self.T-mi*self.const['lambda_f']
+        ml=np.sum(ml,axis=1)
+        mi=np.sum(mi,axis=1)
+        u=np.sum(u,axis=1)
+        du=u-u[0]
+        m=ml+mi
+        dm=m-m[0]
+        qT=self.qT.cumsum()*self.const['rho_liq']
+        qB=self.qB.cumsum()*self.const['rho_liq']
+        jT=self.jT.cumsum()
+        jB=self.jB.cumsum()
+        pl.subplot(2,1,1)
+        pl.plot(t,qT-qB,'.',label='Net water balance flux')
+        pl.plot(t,dm,'-',label='Cumulative change in mass')
+        pl.grid(); pl.legend()
+        pl.subplot(2,1,2)
+        pl.plot(t,jT-jB,'.',label='Net heat balance flux')
+        pl.plot(t,du,'-',label='Cumulative change in internal energy')
+        pl.grid(); pl.legend()
+
