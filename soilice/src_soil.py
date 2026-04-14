@@ -149,19 +149,19 @@ class model:
         opts=self.opts
         print('*************************************************************************\n     SUMMARY OF MODEL OPTIONS:')
         
-        print(f'     * {'Simulating flow' if opts['simulateFlow']==1  else 'No flow'}')
+        print(f"     * {'Simulating flow' if opts['simulateFlow']==1  else 'No flow'}")
         if opts['simulateFlow']:
-            print(f'     * {'Vertical flow' if opts['gravity']==1  else 'Horizontal flow'}')
-            print(f'     * {'Infiltration at ground surface' if opts['infiltration']==1  else 'Fixed psi at ground surface'}')
-            print(f'     * {'Hydraulic conductivity based on liquid water content' if opts['cryoK']==1  else 'Hydraulic conductivity based on total water content'}')
-            print(f'     * {'Uses cryosuction based gradient' if opts['cryoGradient']==1  else 'No cryosuction'}')
-            print(f'     * {'Free draining lower boundary condition' if opts['freeDrainage']==1  else 'No (mass) flow lower boundary condition'}')
+            print(f"     * {'Vertical flow' if opts['gravity']==1  else 'Horizontal flow'}")
+            print(f"     * {'Infiltration at ground surface' if opts['infiltration']==1  else 'Fixed psi at ground surface'}")
+            print(f"     * {'Hydraulic conductivity based on liquid water content' if opts['cryoK']==1  else 'Hydraulic conductivity based on total water content'}")
+            print(f"     * {'Uses cryosuction based gradient' if opts['cryoGradient']==1  else 'No cryosuction'}")
+            print(f"     * {'Free draining lower boundary condition' if opts['freeDrainage']==1  else 'No (mass) flow lower boundary condition'}")
 
-        print(f'     * {'Simulating heat transport' if opts['simulateTransport']==1  else 'No heat transport'}')
+        print(f"     * {'Simulating heat transport' if opts['simulateTransport']==1  else 'No heat transport'}")
         if opts['simulateTransport']:
-            print(f'     * {'Included heat advection' if opts['withadv']==1  else 'No advection of heat'}')
-            print(f'     * {'Conduction on the upper boundary' if opts['conductionTop']==1  else 'No conduction on the upper boundary'}')
-            print(f'     * {'Conduction on the lower boundary' if opts['conductionBot']==1  else 'No conduction on the lower boundary'}')
+            print(f"     * {'Included heat advection' if opts['withadv']==1  else 'No advection of heat'}")
+            print(f"     * {'Conduction on the upper boundary' if opts['conductionTop']==1  else 'No conduction on the upper boundary'}")
+            print(f"     * {'Conduction on the lower boundary' if opts['conductionBot']==1  else 'No conduction on the lower boundary'}")
         print('*************************************************************************\n')
 
     def readPars(self,filename='def'):
