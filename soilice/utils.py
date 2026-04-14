@@ -1,6 +1,10 @@
 import dill
 import numpy as np
 import matplotlib.pyplot as pl
+from pathlib import Path
+import shutil
+import importlib.resources as resources
+
 
 def save(filename,output):
     from .src_soil import modelInOut
@@ -22,6 +26,13 @@ def loadModel(filename):
     return sim
 
 def writeDefaultPars(daily=True,filename='def'):
+    
+    # Check if pars file already exists
+    dest_path = Path('.') / f'{filename}_pars.txt'
+    if dest_path.exists():
+        print(f"{filename}_pars.txt already exists in local folder")
+        return
+
     # Save default parameter and constant values to textfiles in the working folder
     
     dailyScaling=86400 if daily else 1
@@ -54,6 +65,7 @@ def writeDefaultPars(daily=True,filename='def'):
 
     # Misc
     pars['q']=0.                            # Default flow rate when not solving RE
+    pars['impedance']=0.                    # Impedance for frozen soil K (not recommended)
 
     const = {}
     const['stefanBoltzmann']=5.670374419e-8 # J/m2/s/K
@@ -149,4 +161,24 @@ class modelInOut:
         pl.plot(t,jT-jB,'.',label='Net heat balance flux')
         pl.plot(t,du,'-',label='Cumulative change in internal energy')
         pl.grid(); pl.legend()
+
+
+def copyConstitutiveFuns(dest_dir="."):
+    filename = "src_constitutiveFunctions.py"
+    dest_path = Path(dest_dir) / filename
+
+    # 1. Check if file already exists
+    if dest_path.exists():
+        print(f"{filename} already exists at {dest_path}")
+        return
+
+    # 2. Access file inside package
+    try:
+        with resources.files("soilice").joinpath(filename).open("rb") as src:
+            with open(dest_path, "wb") as dst:
+                shutil.copyfileobj(src, dst)
+    except FileNotFoundError:
+        raise FileNotFoundError(f"{filename} not found in package")
+
+    print(f"Copied {filename} to {dest_path}")
 

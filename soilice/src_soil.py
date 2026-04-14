@@ -33,9 +33,9 @@ except ImportError:
 # As above if user specified edits to the conservation equations exist
 # import these, otherwise import the defaults
 try: 
-    from src_physics import Richards, heatbalanceFun, ODEfunCall
+    from src_conservationFunctions import Richards, heatbalanceFun, ODEfunCall
 except ImportError:
-    from soilice.src_physics import Richards, heatbalanceFun, ODEfunCall
+    from soilice.src_conservationFunctions import Richards, heatbalanceFun, ODEfunCall
 
 from .utils import modelInOut
 
@@ -76,56 +76,72 @@ class model:
             return 1.0 if answer == trueVal else 0.0
 
         opts={}
-
-        # Solve correct equations (set to zero to remove Cdtheta/dt)
-        opts['massflag']=AskQuestion(
-                'Solve correct mass balance equations, y/n? (default = y)',
-                'y', 'y')
-
-        # Horizontal/vertical
-        opts['gravity']=AskQuestion(
-                'Horizontal or vertical, h/v? (default = v)',
-                'v','v')
-        
-        # Infiltration or fixed psi at upper boundary:
-        opts['infiltration']=AskQuestion(
-                'Infiltration at upper boundary (n means fixed psi), y/n? (default = y)',
-                'y', 'y')
-        
-        # Cryosuction (yes means gradient based on psif, no means gradient based on psie)
-        opts['cryoflow']=AskQuestion(
-                'Include cryosuction, y/n? (default = n)',
-                'n','y')
-
-        # Include advection
-        opts['withadv']=AskQuestion(
-                'Include advection, y/n? (default = y)',
-                'y', 'y')
-
-        # Conduction at the upper boundary based on TTop
-        opts['conductionTop']=AskQuestion(
-                'Conduction, based on TTop, at upper boundary, y/n? (default = n)',
-                'n','y')
-
-        # Conduction at the lower boundary based on TBot
-        opts['conductionBot']=AskQuestion(
-                'Conduction, based on TBop, at lower boundary, y/n? (default = n)',
-                'n','y')
-
         # Simulate flow
         opts['simulateFlow']=AskQuestion(
                 'Simulate flow, y/n? (default = y)',
                 'y','y')
+
+        if opts['simulateFlow']:
+            # Horizontal/vertical
+            opts['gravity']=AskQuestion(
+                    'Horizontal or vertical, h/v? (default = v)',
+                    'v','v')
+            
+            # Infiltration or fixed psi at upper boundary:
+            opts['infiltration']=AskQuestion(
+                    'Infiltration at upper boundary (n means fixed psi), y/n? (default = y)',
+                    'y', 'y')
+            
+            # Cryo hydraulic conductivity (yes means K based on liquid water content, no means K based on total water content)
+            opts['cryoK']=AskQuestion(
+                    'Hydraulic conductivity based on liquid water content, y/n? (default = y)',
+                    'y','y')
+
+            # Cryosuction (yes means gradient based on psif, no means gradient based on psie)
+            opts['cryoGradient']=AskQuestion(
+                    'Use cryosuction gradient, y/n? (default = n)',
+                    'n','y')
+
+            # Simulate free Drainage
+            opts['freeDrainage']=AskQuestion(
+                    'Simulate free drainage on lower boundary (n means no flow), y/n? (default = y)',
+                    'y','y')
+
+        else:
+            opts['gravity']=1.
+            opts['infiltration']=1.
+            opts['cryoK']=1.
+            opts['cryoGradient']=0.
+            opts['freeDrainage']=0.
+
 
         # Simulate heat transport
         opts['simulateTransport']=AskQuestion(
                 'Simulate heat transport, y/n? (default = y)',
                 'y','y')
 
-        # Simulate free Drainage
-        opts['freeDrainage']=AskQuestion(
-                'Simulate free drainage on lower boundary (n means no flow), y/n? (default = y)',
-                'y','y')
+        if opts['simulateTransport']:
+
+            # Include advection
+            opts['withadv']=AskQuestion(
+                    'Include advection, y/n? (default = y)',
+                    'y', 'y')
+
+            # Conduction at the upper boundary based on TTonp
+            opts['conductionTop']=AskQuestion(
+                    'Conduction, based on TTop, at upper boundary, y/n? (default = n)',
+                    'n','y')
+
+            # Conduction at the lower boundary based on TBot
+            opts['conductionBot']=AskQuestion(
+                    'Conduction, based on TBop, at lower boundary, y/n? (default = n)',
+                    'n','y')
+
+        else:
+            opts['withadv']=0.
+            opts['conductionTop']=0.
+            opts['conductionBot']=0.
+
 
         self.opts=opts
 
@@ -133,16 +149,19 @@ class model:
         opts=self.opts
         print('*************************************************************************\n     SUMMARY OF MODEL OPTIONS:')
         
-        print(f'     * {'Solving correct mass bal eqns' if opts['massflag']==1  else 'Solving simplified mass bal eqns'}')
-        print(f'     * {'Vertical flow' if opts['gravity']==1  else 'Horizontal flow'}')
-        print(f'     * {'Infiltration at ground surface' if opts['infiltration']==1  else 'Fixed psi at ground surface'}')
-        print(f'     * {'Includes cryosuction based flow' if opts['cryoflow']==1  else 'No cryosuction'}')
-        print(f'     * {'Included heat advection' if opts['withadv']==1  else 'No advection of heat'}')
-        print(f'     * {'Conduction on the upper boundary' if opts['conductionTop']==1  else 'No conduction on the upper boundary'}')
-        print(f'     * {'Conduction on the lower boundary' if opts['conductionBot']==1  else 'No conduction on the lower boundary'}')
         print(f'     * {'Simulating flow' if opts['simulateFlow']==1  else 'No flow'}')
+        if opts['simulateFlow']:
+            print(f'     * {'Vertical flow' if opts['gravity']==1  else 'Horizontal flow'}')
+            print(f'     * {'Infiltration at ground surface' if opts['infiltration']==1  else 'Fixed psi at ground surface'}')
+            print(f'     * {'Hydraulic conductivity based on liquid water content' if opts['cryoK']==1  else 'Hydraulic conductivity based on total water content'}')
+            print(f'     * {'Uses cryosuction based gradient' if opts['cryoGradient']==1  else 'No cryosuction'}')
+            print(f'     * {'Free draining lower boundary condition' if opts['freeDrainage']==1  else 'No (mass) flow lower boundary condition'}')
+
         print(f'     * {'Simulating heat transport' if opts['simulateTransport']==1  else 'No heat transport'}')
-        print(f'     * {'Free draining lower boundary condition' if opts['freeDrainage']==1  else 'No (mass) flow lower boundary condition'}')
+        if opts['simulateTransport']:
+            print(f'     * {'Included heat advection' if opts['withadv']==1  else 'No advection of heat'}')
+            print(f'     * {'Conduction on the upper boundary' if opts['conductionTop']==1  else 'No conduction on the upper boundary'}')
+            print(f'     * {'Conduction on the lower boundary' if opts['conductionBot']==1  else 'No conduction on the lower boundary'}')
         print('*************************************************************************\n')
 
     def readPars(self,filename='def'):

@@ -17,7 +17,11 @@ except ImportError:
 def Richards(t,psif,psie,dz,pars,const,opts,nz,upperBC):
 
     # Get hydraulic conductivity
-    K=KFun(psie,psif,pars,const)
+    K=(
+        KFun(psif,psif,pars,const)*opts['cryoK']+
+        KFun(psie,psif,pars,const)*(1-opts['cryoK'])
+    )
+
     Kmid=(K[:-1]+K[1:])/2.0
     Ksurf=KFun(np.array([upperBC]),np.array([upperBC]),pars,const)
 
@@ -26,6 +30,8 @@ def Richards(t,psif,psie,dz,pars,const,opts,nz,upperBC):
     
     # Upper boundary: infiltration rate
     qImax=-K[0]*(psie[0]/(dz[0]/2)-1)
+    #psiTop=np.minimum(psie[0],0)
+    #qImax=-K[0]*(psiTop/(dz[0]/2)-1)
     
     # q[0]=qI # 
     q[0]=np.minimum(upperBC,qImax)*opts['infiltration']
@@ -38,7 +44,7 @@ def Richards(t,psif,psie,dz,pars,const,opts,nz,upperBC):
     # internal nodes
     cryoflow=-Kmid*((psif[1:]-psif[:-1])/((dz[1:]+dz[:-1])/2)-opts['gravity'])
     normflow=-Kmid*((psie[1:]-psie[:-1])/((dz[1:]+dz[:-1])/2)-opts['gravity'])
-    q[1:-1]=opts['cryoflow']*cryoflow+(1-opts['cryoflow'])*normflow
+    q[1:-1]=opts['cryoGradient']*cryoflow+(1-opts['cryoGradient'])*normflow
 
     C=CFun(psie,pars)
     
@@ -94,7 +100,7 @@ def heatbalanceFun(t,psie,psif,T,TTop,TBot,jTopAdv,jTopNonAdv,dz,pars,const,opts
     
     # Change in temperature in frozen conditions:
     storageTerm=(const['cp_ice']*T-const['lambda_f'])*const['rho_liq']*dthetaTdt
-    denom=const['rho_liq']*Fdash*(opts['massflag']*T*(const['cp_liq']-const['cp_ice'])+const['lambda_f'])+CB
+    denom=const['rho_liq']*Fdash*(T*(const['cp_liq']-const['cp_ice'])+const['lambda_f'])+CB
     dTdt=(fluxDiv-storageTerm)/denom
 
     # Change in temperature in unfrozen conditions:

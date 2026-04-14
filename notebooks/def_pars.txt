@@ -15,3 +15,5 @@
          kappa_org, 21600.0
           rho_soil, 2600.0
            rho_org, 1300.0
+                 q, 0.0
+         impedance, 0.0
