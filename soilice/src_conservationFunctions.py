@@ -128,7 +128,7 @@ def ODEfunCall(t,DV,upperBC,TTop,TBot,TInf,jTopBC,dz,pars,const,opts,nz):
     else:
         dthetaTdt=np.zeros(nz)
         dpsiedt=np.zeros(nz)
-        q=np.full(nz+1,pars['q'])
+        q=np.full(nz+1,pars['q'][0] if hasattr(pars['q'], "__getitem__") else pars['q'])
 
     if opts['simulateTransport']:
         jTopAdv=q[0]*const['cp_liq']*const['rho_liq']*TInf
