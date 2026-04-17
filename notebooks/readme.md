@@ -5,6 +5,8 @@
 For full details of the model configuration see the notebook [here](00_Properties.ipynb).
 
 ![](00_properties_psi.png)
+<img src="00_properties_psi.png")
+
 ![](00_properties_T.png)
 ![](00_KFuns.png)
 
