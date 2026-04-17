@@ -1,5 +1,14 @@
 # Demonstration simulations using soilice
 
+## Frozen soil hydraulic properties
+
+For full details of the model configuration see the notebook [here](00_Properties.ipynb).
+
+![](00_properties_psi.png)
+![](00_properties_T.png)
+![](00_KFuns.png)
+
+
 ## Heat propagation
 
 In this simulation we solve a vertical soil profile (with massflag=1 and gravity=1), with no cryosuction, with no flow (simulateFlow=False), with advection turned on and a specified heat flux at the upper boundary (`jTopBC=2e6 # J/m2/s`). Loam soil properties are used for a homogeneous 2m deep soil profile. A uniform initial temperature of -2.5 deg C is used. We simulate a wet and dry profile with an initial $\psi=-1$ and $\psi=-10$, respectively. We run the model for 10 days, and in the figures below the results are plotted every 1.5 days. 
@@ -34,19 +43,19 @@ In the fourth and final scenario we keep everything the same as scenario 3, but 
 
 ![](02_Irrigation04.png)
 
+## Seasonal freeze-thaw simulations
+
+Full details of these model runs are [here](03_SeasonalFreezeThaw.ipynb).
+
+![](03_PFS.png)
+![](03_SFS.png)
+
+
 ## Cryosuction demonstration
 
-![](03_cryo01.png)
-![](03_cryo02.png)
-![](03_cryo03.png)
+Full details of these model runs are [here](04_Cryosuction.ipynb).
 
-## Seasonally frozen soil simulations
+![](04_cryo01.png)
+![](04_cryo02.png)
+![](04_cryo03.png)
 
-![](04_SFS_01.png)
-![](04_SFS_02.png)
-![](04_SFS_03.png)
-
-## Permafrost soil simulations
-
-![](05_PFS_01.png)
-![](05_PFS_02.png)

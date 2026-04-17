@@ -1,23 +1,24 @@
-all: figures/01_heatPropagation.png figures/02_Irrigation01.png figures/04_cryo01.png figures/05_SFS_01.png figures/06_PFS_01.png
+all: figures/00_KFuns.png figures/01_heatPropagation.png figures/02_Irrigation01.png figures/03_SFS.png figures/04_cryo01.png 
+
+figures/00_KFuns.png: 00_Properties.ipynb
+	jupyter nbconvert --to notebook --execute --inplace "$<"
+	touch figures/00*
 
 figures/01_heatPropagation.png: 01_HeatingSurface.ipynb
 	jupyter nbconvert --to notebook --execute --inplace "$<"
+	touch figures/01*
 
 figures/02_Irrigation01.png: 02_InfiltrationPulse.ipynb
 	jupyter nbconvert --to notebook --execute --inplace "$<"
+	touch figures/02*
 
-# figures/03_layered.png: 03_layeredSoil.ipynb
-# 	# Do nothing
-# 	#jupyter nbconvert --to notebook --execute --inplace "$<"
+figures/03_SFS.png: 03_SeasonalFreezeThaw.ipynb
+	jupyter nbconvert --to notebook --execute --inplace "$<"
+	touch figures/03*
 
 figures/04_cryo01.png: 04_Cryosuction.ipynb
 	jupyter nbconvert --to notebook --execute --inplace "$<"
-
-figures/05_SFS_01.png: 05_SeasonallyFrozenSoil.ipynb
-	jupyter nbconvert --to notebook --execute --inplace "$<"
-
-figures/06_PFS_01.png: 06_PermafrostSoil.ipynb
-	jupyter nbconvert --to notebook --execute --inplace "$<"
+	touch figures/04*
 
 .PHONY: clean
 

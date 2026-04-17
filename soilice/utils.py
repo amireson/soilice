@@ -162,14 +162,13 @@ class modelInOut:
         pl.plot(t,du,'-',label='Cumulative change in internal energy')
         pl.grid(); pl.legend()
 
-
-def copyConstitutiveFuns(dest_dir="."):
-    filename = "src_constitutiveFunctions.py"
+def copyFuns(dest_dir,filename):
     dest_path = Path(dest_dir) / filename
 
     # 1. Check if file already exists
     if dest_path.exists():
         print(f"{filename} already exists at {dest_path}")
+        print("If you wish to overwrite this file, delete it then rerun this function")
         return
 
     # 2. Access file inside package
@@ -182,3 +181,10 @@ def copyConstitutiveFuns(dest_dir="."):
 
     print(f"Copied {filename} to {dest_path}")
 
+def copyConstitutiveFuns(dest_dir="."):
+    filename = "src_constitutiveFunctions.py"
+    copyFuns(dest_dir,filename)
+    
+def copyConservationFuns(dest_dir="."):
+    filename = "src_conservationFunctions.py"
+    copyFuns(dest_dir,filename)

@@ -30,12 +30,9 @@ def Richards(t,psif,psie,dz,pars,const,opts,nz,upperBC):
     
     # Upper boundary: infiltration rate
     qImax=-K[0]*(psie[0]/(dz[0]/2)-1)
-    #psiTop=np.minimum(psie[0],0)
-    #qImax=-K[0]*(psiTop/(dz[0]/2)-1)
-    
-    # q[0]=qI # 
     q[0]=np.minimum(upperBC,qImax)*opts['infiltration']
-    #q[0]+= -K[0]*((psie[0]-upperBC)/(dz[0]/2)-1)*(1-opts['infiltration'])
+
+    # Upper boundary: specified psie
     q[0]+= -(Ksurf[0]+K[0])/2*((psie[0]-upperBC)/(dz[0]/2)-1)*(1-opts['infiltration'])
     
     # lower boundary: free (gravity) drainage 
