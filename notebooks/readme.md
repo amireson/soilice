@@ -4,10 +4,10 @@
 
 For full details of the model configuration see the notebook [here](00_Properties.ipynb).
 
-![](figures/00_properties_psi.png)
+![](figures/00_properties_psi.svg)
 
-![](figures/00_properties_T.png)
-![](figures/00_KFuns.png)
+![](figures/00_properties_T.svg)
+![](figures/00_KFuns.svg)
 
 
 ## Heat propagation
@@ -16,7 +16,7 @@ In this simulation we solve a vertical soil profile (with massflag=1 and gravity
 
 For full details of the model configuration see the notebook [here](01_HeatingSurface.ipynb).
 
-![](figures/01_heatPropagation.png)
+![](figures/01_heatPropagation.svg)
 
 The figure shows how latent heat impacts the propagation of heat into the profile. In the wet simulation, the increasing temperature with depth is retarded by latent heat. In the dry soil there is no water to absorb latent heat, and the temperature increases are deeper. 
 
@@ -30,35 +30,35 @@ Full details of these model runs are [here](02_InfiltrationPulse.ipynb).
 
 The first simulation considers an unfrozen soil ($T_{ini}=0$) and moderate water content ($\psi=-5$) with irrigation water at $T_I=2$ deg C. This is warm rain on an unfrozen profile. The soil wets and warms, as shown.
 
-![](figures/02_Irrigation01.png)
+![](figures/02_Irrigation01.svg)
 
 ![](figures/02_Irrigation01.svg)
 
 The second simulation is identical to the first, but the initial soil temperature is dropped to $T_{ini}=-1$, so that the warm rain is falling onto partially frozen soil. We see here the soil thaws as the water infiltrates. The breakthrough of drainage from the base of the soil still happens, but it is delayed compared with the first scenario. There is also no runoff generated in this scenario.
 
-![](figures/02_Irrigation02.png)
+![](figures/02_Irrigation02.svg)
 
 The third scenario considers a colder initially soil temperature ($T_{ini}-5$) and infiltration at $T_I=0$, representative of snowmelt. In this case the soil is not fully thawed as the water infiltrates. Ice accumulates at the ground surface, reducing the infiltration capacity, such that after about 2 days runoff is generated as not all of the irrigation can infiltrate. The drainage from the base of the soil is reduced and delayed.
 
-![](figures/02_Irrigation03.png)
+![](figures/02_Irrigation03.svg)
 
 In the fourth and final scenario we keep everything the same as scenario 3, but increase the initial soil wetness by making $psi_{ini}=-1. This is now snowmelt onto an almost saturated soil. In this case, the water that does infiltrate freezes in the near surface, increasing the ice content such that the infiltration capacity becomes extremely low and there is hardly any infiltration and no drainage at all. Almost all of the irrigated water becomes runoff in this scenario - consistent with our understanding of runoff/infiltration partitioning in wet frozen soils.
 
-![](figures/02_Irrigation04.png)
+![](figures/02_Irrigation04.svg)
 
 ## Seasonal freeze-thaw simulations
 
 Full details of these model runs are [here](03_SeasonalFreezeThaw.ipynb).
 
-![](figures/03_SFS.png)
-![](figures/03_PFS.png)
+![](figures/03_SFS.svg)
+![](figures/03_PFS.svg)
 
 
 ## Cryosuction demonstration
 
 Full details of these model runs are [here](04_Cryosuction.ipynb).
 
-![](figures/04_cryo01.png)
-![](figures/04_cryo02.png)
-![](figures/04_cryo03.png)
+![](figures/04_cryo01.svg)
+![](figures/04_cryo02.svg)
+![](figures/04_cryo03.svg)
 
