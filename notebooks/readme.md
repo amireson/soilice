@@ -32,8 +32,6 @@ The first simulation considers an unfrozen soil ($T_{ini}=0$) and moderate water
 
 ![](figures/02_Irrigation01.svg)
 
-![](figures/02_Irrigation01.svg)
-
 The second simulation is identical to the first, but the initial soil temperature is dropped to $T_{ini}=-1$, so that the warm rain is falling onto partially frozen soil. We see here the soil thaws as the water infiltrates. The breakthrough of drainage from the base of the soil still happens, but it is delayed compared with the first scenario. There is also no runoff generated in this scenario.
 
 ![](figures/02_Irrigation02.svg)
