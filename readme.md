@@ -2,13 +2,15 @@
 
 # About
 
-$\text{soilice}$ v1.0 is a coupled mass and heat balance solver for frozen soils. The code is written in python and is designed to be concise, highly readable and easy to customize (try new constituitive relationships, etc) without having to re-compile the code. It will run on any platform. It uses a just-in-time compiler and an ODE solver, so is efficient and has excellent mass/energy conservation. User instructions are provided in this readme file below. 
+$\text{soilice}$ v1.0 is a coupled mass and heat balance solver for frozen soils. The code is written in python and is designed to be concise, readable and easy to customize (try new constituitive relationships, etc) without having to re-compile the code. It will run on any platform. It uses a just-in-time compiler and an ODE solver, so is efficient and has excellent mass/energy conservation. User instructions are provided in this readme file below. 
 
 The technical documentation is provided [here](technicalDocumentation/soiliceDoc.pdf).
 
 Some demonstration simulations are provided [here](notebooks/readme.md).
 
 # Installation
+
+$\text{soilice}$ is installled using the [pip](https://pypi.org/project/pip/) python package installer.
 
 Optionally you might want to create a new python virtual environment before installing this (see [here](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/)).
 
@@ -17,7 +19,9 @@ To install directly from github, enter this command in your terminal/power shell
 pip install git+ssh://git@github.com/amireson/soilice.git
 ```
 
-Alternatively, for an interactive installation, clone this repo. In the root folder then enter `pip install -e ".[dev]"`. Now you can import the model to use it from anywhere on your computer. With these options the package is installed in development mode, meaning you can edit the source code and the changes will be reflected wherever you use the imported package - making it easy to experiment with alternative constituitive relations and so on.
+Alternatively, obtain the source code by cloning this repo, then navigate to the root folder of the repo and install using the command `pip install .`. 
+
+After installation you can import the model to use it from anywhere on your computer. Note, if you are interested in editing the source code, read the section below on customizing $\text{soilice}$.
 
 # Running the testcases
 
@@ -25,58 +29,124 @@ The best way to get started with $\text{soilice}$ is to run the provided test ca
 
 # User guide
 
-The $\text{soilice}$ model simulates coupled flow of liquid water and heat transport in a variable saturated and variably frozen soil profile. This can be configured to solve flow only, transport only or coupled flow and transport. There is also flexibility in the boundary conditions that are used, as described below. To import the model use the command `from src_soil import run as run`
+The $\text{soilice}$ model simulates coupled flow of liquid water and heat transport in a variable saturated and variably frozen soil profile. This can be configured to solve flow only, transport only or coupled flow and transport. There is also flexibility in the boundary conditions that are used, as described below. Below is a step by step guide to setting up and running the model. This is easiest to do within a jupyter notebook, at least for a new model setup and run - here each step of the guide is to carried out within one cell of a jupyter notebook. 
 
-## Configuring soilice options
+## Step 1: Import and instantiate the model
 
-To configure the model options you must create a dictionary `opts` with the following variables:
+$\text{soilice}$ is object oriented, so you start by creating a model object - that is you instantiate the model, and all model parameters and variables are saved in that model object. Here we will call our model `sim`. Execute the following commands:
 
-`opts['massflag']` is set to `0.` to make the assumption $\frac{dmc_pT}{dt}=mc_p\frac{dT}{dt}$ 
+```python
+from soilice import model
+sim=model()
+```
 
-`opts['massflag']` is set to `1.` to make the assumption $\frac{dmc_pT}{dt}=mc_p\frac{dT}{dt}+Tc_p\frac{dm}{dt}$ (which is more correct). This allows the user to explore the impact of the simplifying assumption that is present in some other frozen soil models.
+Note, you will also want to import the numpy and pyplot libraries:
 
-`opts['gravity']` is set to `0.` for horizontal flow (no gravity component) or `1.` for vertical (positive downwards) flow. 
+```python
+import numpy as np
+import matplotlib.pyplot as pl
+```
 
-`opts['freeDrainage']` is set to `0.` for a no flow lower boundary condition and `1.0` for a free draining lower boundary condition.
+## Step 2: Select model options
 
-`opts['cryoflow']` determines whether the hydraulic gradient in the soil is set based on $\psi_e$ (the matric potential associated with the total water content, using `opts['cryoflow']=0.`) or $\psi_f$ (the matric potential associated with freezing, using `opts['cryoflow']=1.`).
+The model options can be set intuitively using the command:
 
-`opts['withadv']` allows the user to turn on (`1.`) or off (`0.`) advection. When off heat transport is by conduction only.
+```python
+sim.setOpts()
+```
 
-`opts['conductionTop']` is set to 1. to calculate the upper boundary heat flux based on the specified temperature, `TTop`. This conductive heat flux is added to the specified advective heat flux `jTop`. Hence to use a type I upper boundary for heat transport, set `jTop=np.zeros(nt)`, set `opts['conductionTop']=1.` and set `TTop=f(t)`. To use a type II upper boundary for heat transport, set `opts['conduction']=0.` and set `jTop=f(t)` (while the values in `TTop` are not used by the model). A mixed boundary is also possible where both advective and conductive fluxes are set.
+The user is prompted for a number of options. Since you will not want to go through this step every time you run the model, you can output your options to the screen (after the above step), by typing in a cell the command
 
-`opts['conductionBot']` is the same as the previous option, but for the lower heat transport boundary condition. In this case, the advective flux only comes in if there is free drainage happening, and can only be an outflow.
+```python
+sim.opts
+```
 
-`opts['simulateFlow']` is set to `True` or `False` to determine whether or not the model simulates flow. If `False` there is no change in total water content, no change in $\psi_e$ and zero mass fluxes $q$, which means the initial condition dictates the distribution of total water content in the profile. 
+Now you can copy-paste your options and store them in the options variable, using the command
 
-`opts['simulateTransport']` is set to `True` or `False` to determine whether or not the model simulates flow. If `False` there is change in internal energy or temperature and the heat fluxes $j$ are zero, which means the initial condition dictates the soil temperature and hence partitioning of total water content into ice and liquid. 
+```python
+sim.opts={'simulateFlow': 1.0,
+ 'gravity': 1.0,
+ 'infiltration': 1.0,
+ 'cryoK': 1.0,
+ 'cryoGradient': 0.0,
+ 'freeDrainage': 1.0,
+ 'simulateTransport': 1.0,
+ 'withadv': 1.0,
+ 'conductionTop': 0.0,
+ 'conductionBot': 0.0}}
+```
 
-Turning off flow and transport allows the user to quickly see the equilibrium distribution of liquid water and ice in a soil profile for a given initial (steady-state) condition. 
+The above are the default options. This final command (with options changed to `0.0` or `1.0`) is all you need to define all the model options.
 
-## Parameters and constants
+The meaning of each option is described as follows:
 
-In the model `pars` is a dictionary that defines all model parameters - meaning constants that might change under different soil conditions. Each parameter can either by given a scalar value (e.g. `pars['thetaS']=0.4`), for a uniform profile, or it must have a unique value defined for every soil layer (e.g. `pars['thetaS'][:5]=0.4; pars['thetaS'][5:10]=0.3`, where `nz=10`) for a layered profile. Before sending the dictionary into the model it must be converted to a `numba` compatible dictionary with either `MakeDictFloat` (for uniform profile) or `MakeDictArray` (for a layered profile). 
+option | description
+--- | ---
+simulateFlow | 1.0/0.0 do/do not solve the mass balance equations
+gravity | 0.0/1.0 a horizontal/vertical profile
+infiltration | 0.0 use a fixed psi upper boundary condition; 1.0 use a potential infiltration flux upper boundary condition
+cryoK | 0.0 hydraulic conductivity is a function of the total water content; 1.0 hydraulic conductivity is a function of the liquid water content
+cryoGradient | 1.0/0.0 hydraulic gradient does/does not include cryosuction
+freeDrainage | 0.0 zero mass flux flow boundary condition; 1.0 free draining lower boundary condition
+simulateTransport | 1.0/0.0 do/do not solve the heat balance equations
+withadv | 1.0/0.0 do/do not include the heat flux due to advection
+conductionTop | 1.0/0.0 do/do not include a conductive heat flux on the upper boundary (based on the temperature variable TTop)
+conductionBot | 1.0/0.0 do/do not include a conductive heat flux on the lower boundary (based on the temperature variable TBot)
 
-Note that sample parameters can be imported from `pars_loam.py` using the command `from soilice.pars_loam import pars`.
+Note that turning off flow and transport allows the user to quickly see the equilibrium distribution of liquid water and ice in a soil profile for a given initial (steady-state) condition. 
 
-The dictionary `const` includes all the model parameters that can be considered constants and will not change with depth or between different model runs. Examples include the density of water, `const['rho_liq']`. The constants can be imported from the `constants.py` file.
+## Step 3: The model space grid
 
-## The model space grid
+$\text{soilice}$ uses a 1D finite difference grid, with `z` positive in the downward direction (depth below ground, typically) and flexible space steps - that is, `dz` does not have to be constant. The user defines a numpy array describing the cell boundaries, `bz`, which will have `nz+1` values. The model calculates the midpoints which are used for the state variables, and for which there are `nz` values. The numpy array describing the boundaries is sent into the model with the command `sim.zGrid(bz)`. 
 
-The user must specify the following variables to define the model space grid, noting the `z` represents depth below ground in (m):
+For example, if we have a grid from ground surface to a depth of 1 m below ground, with a 0.01 m space step, we can use this command:
 
-`nz` an integer representing the number of soil layers <br>
-`zMax` the total depth of the soil profile <br>
-`dz` an array of dimension `nz` that represents the depth of each soil layer (starting at the top and going down), such that `np.sum(dz)==zMax`. <br>
-`z` is not strictly needed by the model, but could be useful for plotting purposes. `z` is an array storing the midpoint depth of each cell. 
+```python
+sim.zGrid(np.arange(0,1.01,0.01))
+```
+
+After doing this, the space grid is saved in the variable `sim.z` and the number of grid cells is `sim.nz`
 
 ## The model time grid
 
-The user must specify the following variables to define the model time grid, noting `t` is time in units that must be consistent with the hydraulic and thermal conductivity parameter values:
+The model uses a regular time grid, with time step `dt`, start time `t0`, and end time `tMax`. Note, that time units must be consistent with the hydraulic and thermal conductivity parameter values. The time grid is assigned to $\text{soilice}$ with the command
 
-`t` an array storing the values of time where calculation outputs are to be stored. <br>
-`dt` the time step for each calculation step. The first calculation performed would be stored at time `t[1]=t[0]+dt`. Note `dt` is currently setup to be constant, and this is probably a sensible decision to stick to. <br>
-`nt` an integer representing the number of time steps.
+```python
+sim.tGrid(t0,tMax,dt)
+```
+
+Now the time grid is saved in the variable `sim.t` and the number of time steps is `sim.nt`.
+
+## Parameters and constants
+
+
+$\text{soilice}$ requires the user to define a number of parameters (variables that might change from soil to soil) and constants (variables that are unlikely to change from soil to soil) in python dictionaries. It is essentially that every parameter that is used in the source code (see Customizing a function section below). If using the default constitutive functions, it is recommended that the user imports default parameter values, and edits them as needed. To import the default parameters and constants into a text file in the working folder run the following commands:
+
+```python
+from soilice import writeDefaultPars
+writeDefaultPars(filename='myPars')
+```
+
+The filename here is optional. This will create two text files containing default constants and parameters for a guelph loam defined originally by van Genuchten (1980). These parameters are not yet associated with the model - to do this execute the command:
+
+```python
+sim.readPars('myPars')
+```
+
+This will read the parameters from the file `myPars_pars.txt` into the library `sim.pars` and the constants from the file `myPars_const.txt` into the library `sim.const`. 
+
+Parameters can also be assigned different values for different layers in the following manner. For a **uniform profile**, every parameter must be assigned a scalar value (e.g. `thetaS=0.4`)
+
+If any single parameter has more than one value assigned, then all parameters are defined for every layer individually, and the model uses a **non-unform** or **layered profile**. In a layered profile the following options are available and each parameter is handled individually:
+
+number of values defined | How this is treated | Example
+--- | --- | ---
+1 (scalar or array)  | The parameter is duplicated for each layer - i.e. this parameter is uniform | `thetaS=0.4` or `thetaS=[0.4]`
+2 (array) | The parameter is scaled linearly from top to bottom | `thetaS=[0.4,0.2]`
+3 (array) | The parameter is scaled exponentially, with the 3 values representing the value at `z=0`, `z=1.0`, and `z=infinity` | `thetaS=[0.4,0.3,0.2]`
+`n` (array) | The parameter is explicitly defined for each individual layer | `thetaS=[0.4,0.4,0.3,0.3,... ]`
+
+The file def_pars.txt can be edited to the formats shown in the examples above - that is to say the model can parse lists in square brackets. Then, after editing that file, the parameters are assigned in the same way, with the commands above.
 
 ## The model boundary conditions
 
@@ -148,45 +218,43 @@ Note, this function needs the parameters and constants to be defined and it need
 
 ## Customizing a function
 
-It is possible to test alternative functions in $\text{soilice}$, for example for the hydraulic of thermal properties. The code below overwrites the default hydraulic conductivity function, and should be included in the script/notebook before the run command.
+$\text{soilice}$ is designed so that you can make a local copy of parts of the source code in a working folder and edit the functions. The code is organized into three python scripts:
 
-``` python
-# Overide the KFun with a custom function:
-from numba import jit 
-import soilice.src_soil as sm
+`src_soil.py` is used to configure and run the model. It is unlikely users would ever need to edit this script, and there is no simple way to do that.
 
-@jit(nopython=True)
-def KFun(psie,psif,pars,const):
-    # Using frozen psi to calculate K:
-	# Note this will result in very low K values, and this is inappropriate for infiltration simulations
-    Se=(1+(psif*-pars['alpha'])**pars['n'])**(-pars['m'])
-    Se[psif>0.]=1.0
-    K=pars['Ks']*Se**pars['neta']*(1-(1-Se**(1/pars['m']))**pars['m'])**2
-    
-    return K
+`src_constitutiveFunctions.py` is used to define all the constitutive relations - that is the soil hydraulic and thermal properties. To edit these functions, the user must copy this script into their working folder. Whenever $\text{soilice}$ is run from within that folder the local copy of this script is used. Run the following commands (e.g. in a jupyter notebook) to make a local copy of the script:
 
-sm.KFun=KFun
+```python
+from soilice import copyConstitutiveFuns
+copyConstitutiveFuns()
 ```
 
+Now you have a local copy of `src_constitutiveFunctions.py` that you can easily edit. The only thing you cannot change is the function inputs/outputs. The specific functions, with their inputs and outputs that you can edit are:
 
-This can be adapted to any other functions. Here is the list of the functions in `src_soil` that are likely candidates for exploring alternative forms:
+```python
+theta = thetaFun(psi,pars)
+C     = CFun(psi,pars)
+K     = KFun(psie,psif,pars,const)
+kappa = thermalKfun(psie,psif,T,pars,const)
+CB    = CBFun(psie,psif,pars,const)
+dthdT = SFCslope(psie,psif,pars,const)
+psi   = GCEFun(T,pars,const)
+```
+`src_conservationFunctions.py` is used to define the mass and energy conservation equations. This includes two main functions - a mass balance function that is essentially solving Richards' Equation; and an energy balance function that is essentially solving the advection-diffusion equation, in both cases with modifications to account for phase change/latent heat, as fully described in the  [technical documentation](technicalDocumentation/soiliceDoc.pdf). These functions can also be copied locally and edited in the same way as the constitutive functions, though it is less likely that a user would want to do that. To do this, run the following script:
 
-``` python3
-thermalKfun(psie,psif,T,pars,const)
+```python
+from soilice import copyConservationFuns
+copyConservationFuns()
+```
 
-GCEfun(T,pars,const)
+The specific functions, with their inputs and outputs that you can edit are:
 
-SFCslope(T,pars,const)
+```python
+dthetaTdt,dpsiedt,q = Richards(
+    t,psif,psie,dz,pars,const,
+    opts,nz,upperBC)
 
-CBfun(psie,psif,pars,const)
-
-thetaFun(psi,pars)
-
-CFun(psi,pars)
-
-KFun(psie,psif,pars,const)
-
-Richards(t,psif,psie,dz,pars,const,opts,nz,qI)
-
-heatbalanceFun(t,psie,psif,T,TTop,TBot,jTopAdv,jTopNonAdv,dz,pars,const,opts,nz,dthetaTdt,q)
+dTdt,j = heatbalanceFun(
+    t,psie,psif,T,TTop,TBot,jTopAdv,jTopNonAdv,
+    dz,pars,const,opts,nz,dthetaTdt,q)
 ```
