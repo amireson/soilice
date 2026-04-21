@@ -231,6 +231,7 @@ Variable | Meaning | Required when
 `qI` | Potential infiltration rate | `opts['infiltration']=1.0`
 `psiT` | Matric potential on upper boundary | `opts['infiltration']=0.0`
 `jTopBC` | Direct heat flux on upper boundary | Can always be used or set to zero.
+`jBotBC` | Direct heat flux on lower boundary | Can always be used or set to zero.
 `TInf` | Temperature of infiltrating water | `opts['withadv']=1.0`
 `TTop` | Temperature of the upper boundary | `opts['conductionTop']=1.0`
 `TBot` | Temperature of the lower boundary | `opts['conductionBot']=1.0`
@@ -257,7 +258,7 @@ On the upper boundary, there are three ways to add heat into the model, and they
 
 ### Lower heat transport boundary
 
-On the lower boundary, there may be an advective heat flux if there is free drainage occurring, and that will depend on the temperature of the lower grid cell. In addition, there can be a conductive heat flux, and this is the same as the upper boundary: to turn it on set `opts['conductionBot']=1.0` and assign the temperature to `TBot`. To turn it off set `opts['conductionBot']=0.0`.
+The lower heat boundary is essentially the same as the upper boundary - with three possible boundary fluxes. A direct heat flux can be applied, for example to represent the geothermal heat flux, using the `jBotBC` variable. There will be an advective heat flux if there is free drainage occurring, and that will depend on the temperature of the lower grid cell, so the user does not set anything for this. In addition, there can be a conductive heat flux, and this is the same as the upper boundary: to turn it on set `opts['conductionBot']=1.0` and assign the temperature to `TBot`. To turn it off set `opts['conductionBot']=0.0`.
 
 ### Assigning the boundary conditions
 
