@@ -9,7 +9,7 @@ description = "My numerical model"
 authors = [{ name = "Andrew Ireson" }]
 readme = "README.md"
 requires-python = ">=3.8"
-dependencies = ["numpy","pandas","matplotlib","scipy","numba"]   # list runtime deps here
+dependencies = ["numpy","pandas","matplotlib","scipy","numba","dill"]   # list runtime deps here
 
 [project.optional-dependencies]
 dev = ["jupyterlab", "ipykernel", "pytest", "black"]

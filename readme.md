@@ -16,7 +16,7 @@ Optionally you might want to create a new python virtual environment before inst
 
 To install directly from github, enter this command in your terminal/PowerShell:
 ```
-pip install git+ssh://git@github.com/amireson/soilice.git
+pip install git+https://git@github.com/amireson/soilice.git
 ```
 
 Alternatively, obtain the source code by cloning this repo, then navigate to the root folder of the repo and install using the command `pip install .`. 
