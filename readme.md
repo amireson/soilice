@@ -258,7 +258,7 @@ On the upper boundary, there are three ways to add heat into the model, and they
 
 ### Lower heat transport boundary
 
-The lower heat boundary is essentially the same as the upper boundary - with three possible boundary fluxes. A direct heat flux can be applied, for example to represent the geothermal heat flux, using the `jBotBC` variable. There will be an advective heat flux if there is free drainage occurring, and that will depend on the temperature of the lower grid cell, so the user does not set anything for this. In addition, there can be a conductive heat flux, and this is the same as the upper boundary: to turn it on set `opts['conductionBot']=1.0` and assign the temperature to `TBot`. To turn it off set `opts['conductionBot']=0.0`.
+The lower heat boundary is essentially the same as the upper boundary - with three possible boundary fluxes. A direct heat flux can be applied, for example to represent the geothermal heat flux, using the `jBotBC` variable. Again, assigning a zero value to `jBotBC` turns that flux off, so no need to set any options. There will be an advective heat flux if there is free drainage occurring, and that will depend on the temperature of the lower grid cell, so the user does not set anything for this. In addition, there can be a conductive heat flux, and this is the same as the upper boundary: to turn it on set `opts['conductionBot']=1.0` and assign the temperature to `TBot`. To turn it off set `opts['conductionBot']=0.0`.
 
 ### Assigning the boundary conditions
 
