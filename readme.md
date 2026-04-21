@@ -327,7 +327,7 @@ $\text{soilice}$ is designed so that you can make a local copy of parts of the s
 
 `src_soil.py` is used to configure and run the model. It is unlikely users would ever need to edit this script, and there is no simple way to do that.
 
-`src_constitutiveFunctions.py` is used to define all the constitutive relations - that is the soil hydraulic and thermal properties. To edit these functions, the user must copy this script into their working folder. Whenever $\text{soilice}$ is run from within that folder the local copy of this script is used. Run the following commands (e.g. in a Jupyter notebook) to make a local copy of the script:
+`src_constitutiveFunctions.py` is used to define all the constitutive relations - that is the soil hydraulic and thermal properties. Review the default configuration [here](soilice/src_constitutiveFunctions.py). To edit these functions, the user must copy this script into their working folder. Whenever $\text{soilice}$ is run from within that folder the local copy of this script is used. Run the following commands (e.g. in a Jupyter notebook) to make a local copy of the script:
 
 ```python
 from soilice import copyConstitutiveFuns
@@ -345,7 +345,7 @@ CB    = CBFun(psie,psif,pars,const)
 dthdT = SFCslope(psie,psif,pars,const)
 psi   = GCEFun(T,pars,const)
 ```
-`src_conservationFunctions.py` is used to define the mass and energy conservation equations. This includes two main functions - a mass balance function that is essentially solving Richards' Equation; and an energy balance function that is essentially solving the advection-diffusion equation, in both cases with modifications to account for phase change/latent heat, as fully described in the  [technical documentation](technicalDocumentation/soiliceDoc.pdf). These functions can also be copied locally and edited in the same way as the constitutive functions, though it is less likely that a user would want to do that. To do this, run the following script:
+`src_conservationFunctions.py` is used to define the mass and energy conservation equations [see here](soilice/src_conservationFunctions.py). This includes two main functions - a mass balance function that is essentially solving Richards' Equation; and an energy balance function that is essentially solving the advection-diffusion equation, in both cases with modifications to account for phase change/latent heat, as fully described in the  [technical documentation](technicalDocumentation/soiliceDoc.pdf). These functions can also be copied locally and edited in the same way as the constitutive functions, though it is less likely that a user would want to do that. To do this, run the following script:
 
 ```python
 from soilice import copyConservationFuns
