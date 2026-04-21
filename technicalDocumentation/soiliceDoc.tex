@@ -159,34 +159,34 @@ We will assume that the mass and internal energy in the vapor phase is negligibl
 The mass and energy balance equations are 
 
 \begin{equation} \label{eq: FD_massbal}
-\frac{dm}{dt}=\frac{dm_l}{dt}+\frac{dm_i}{dt}=-\nabla q_l\rho_l
+\frac{\partial m}{\partial t}=\frac{\partial m_l}{\partial t}+\frac{\partial m_i}{\partial t}=-\rho_l \nabla\cdot \mathbf{q}_l
 \end{equation}
 
 and 
 
 \begin{equation}
-\frac{du}{dt}=
-\frac{du_{si}}{dt}+
-\frac{du_{sl}}{dt}+
-\frac{du_{ss}}{dt}+
-\frac{du_{li}}{dt}=
--\nabla (j_a+j_c+j_o)
+\frac{\partial u}{\partial t}=
+\frac{\partial u_{si}}{\partial t}+
+\frac{\partial u_{sl}}{\partial t}+
+\frac{\partial u_{ss}}{\partial t}+
+\frac{\partial u_{li}}{\partial t}=
+-\nabla\cdot (\mathbf{j}_a+\mathbf{j}_c+\mathbf{j}_o)
 \end{equation}
 
-where $q_l$ (m s$^{-1}$) is the flux of liquid water and $j_a$, $j_c$ and $j_o$ (J m$^{-2}$ s$^{-1}$) are the advective, conductive, and other heat flux components. Expanding the left hand side of the energy balance equation gives
+where $\mathbf{q}_l$ (m s$^{-1}$) is the flux of liquid water and $\mathbf{j}_a$, $\mathbf{j}_c$ and $\mathbf{j}_o$ (J m$^{-2}$ s$^{-1}$) are the advective, conductive, and other heat flux components. Expanding the left hand side of the energy balance equation gives
 
 \begin{equation} \label{eq: UBal3DP}
 	\begin{array}{ll}
 		\displaystyle
-\frac{du}{dt}
+\frac{\partial u}{\partial t}
 &
 		\displaystyle
 =\left(m_{i} c_{pi} + m_{l} c_{pl} + m_{s} c_{ps}\right)
-\frac{dT}{dt}
+\frac{\partial T}{\partial t}
 +c_{pl}T
-\frac{dm_{l}}{dt}
+\frac{\partial m_{l}}{\partial t}
 +(c_{pi}T-\lambda_f)
-\frac{dm_i}{dt}\\
+\frac{\partial m_i}{\partial t}\\
 	\end{array}
 \end{equation}
 
@@ -201,15 +201,15 @@ so we have
 \begin{equation} \label{eq: UBal3DP}
 	\begin{array}{ll}
 		\displaystyle
-\frac{du}{dt}
+\frac{\partial u}{\partial t}
 &
 		\displaystyle
 =c_{pb}
-\frac{dT}{dt}
+\frac{\partial T}{\partial t}
 +c_{pl}T
-\frac{dm_{l}}{dt}
+\frac{\partial m_{l}}{\partial t}
 +(c_{pi}T-\lambda_f)
-\frac{dm_i}{dt}\\
+\frac{\partial m_i}{\partial t}\\
 	\end{array}
 \end{equation}
 
@@ -274,20 +274,20 @@ Now, consider first the case where $\psi_e \leq \psi_f$ (i.e. the soil is unfroz
 
 \begin{equation}
 	\begin{array}{cc}
-\displaystyle \frac{dm_l}{dt}=\frac{dm}{dt};
+\displaystyle \frac{\partial m_l}{\partial t}=\frac{\partial m}{\partial t};
 & 
-\displaystyle \frac{dm_i}{dt}=0
+\displaystyle \frac{\partial m_i}{\partial t}=0
 	\end{array}
 \end{equation}
 %
 Substituting this into Equation \ref{eq: UBal3DP} we have
 
 \begin{equation} \label{eq: unfrozen_dT}
-\frac{dT}{dt}
+\frac{\partial T}{\partial t}
 =
-\frac{\displaystyle\frac{du}{dt}
+\frac{\displaystyle\frac{\partial u}{\partial t}
 -c_{pl}T
-\frac{dm}{dt}
+\frac{\partial m}{\partial t}
 }{c_{pb}
 }
 \end{equation}
@@ -295,15 +295,15 @@ Substituting this into Equation \ref{eq: UBal3DP} we have
 Next consider the case where $\psi_e > \psi_f$ (i.e. the soil is frozen). This time we have
 
 \begin{equation}
-\frac{dm_l}{dt}=\rho_lF'(T)\frac{dT}{dt}
+\frac{\partial m_l}{\partial t}=\rho_lF'(T)\frac{\partial T}{\partial t}
 \end{equation}
 
 and
 
 \begin{equation}
-\frac{dm_i}{dt}=\frac{dm}{dt}-\frac{dm_l}{dt}
+\frac{\partial m_i}{\partial t}=\frac{\partial m}{\partial t}-\frac{\partial m_l}{\partial t}
 =
-\frac{dm}{dt}-\rho_lF'(m,T)\frac{dT}{dt}
+\frac{\partial m}{\partial t}-\rho_lF'(m,T)\frac{\partial T}{\partial t}
 \end{equation}
 
 Substituting these expressions into the Equation \ref{eq: UBal3DP} we get
@@ -322,23 +322,23 @@ Substituting these expressions into the Equation \ref{eq: UBal3DP} we get
 %Rearranging we have
 
 \begin{equation} \label{eq: frozen_dT}
-\frac{dT}{dt}
+\frac{\partial T}{\partial t}
 =
 \frac{\displaystyle
-\frac{du}{dt}
+\frac{\partial u}{\partial t}
 -(c_{pi}T-\lambda_f)
-\frac{dm}{dt}
+\frac{\partial m}{\partial t}
 }{c_{pb}
 +\rho_l F'(T)
 ((c_{pl}-c_{pi})T+\lambda_f)
 }
 \end{equation}
 
-which may then be solved by replacing the derivative terms on the right hand side with the net fluxes. Note, in Ireson et al. (2026) these derivative terms are expanded, and the equations are further simplified. Here, we do not take this extra step, since the soilice model calculates $\partial u/\partial t$ and $\partial m/\partial t$ directly, and those values are substituted directly into Equations \ref{eq: unfrozen_dT} and \ref{eq: frozen_dT}. Hence our governing equations are consistent with those presented in Ireson et al. (2026).
+which may then be solved by replacing the derivative terms on the right hand side with the net fluxes. Note, in Ireson et al. (2026 in prep) these derivative terms are expanded, and the equations are further simplified. Here, we do not take this extra step, since the soilice model calculates $\partial u/\partial t$ and $\partial m/\partial t$ directly, and those values are substituted directly into Equations \ref{eq: unfrozen_dT} and \ref{eq: frozen_dT}. Hence our governing equations are consistent with those presented in Ireson et al. (2026 in prep).
 
 \section{Finite difference formulation}
 
-For a one-dimensional vertical model, with $z$ (m) representing the depth below the ground surface, it is good practice to use a block-centred grid, where $z_n$ denotes the midpoint of a cell, and $z_{n-1/2}$ and $z_{n+1/2}$ are the depths of the top and bottom faces of the cell, respectively. Considering a single control volume at depth index $n$, we can write
+For a one-dimensional vertical model, with $z$ (m) representing the depth below the ground surface, it is good practice to use a block-centred grid, where $z_n$ denotes the midpoint of a cell, and $z_{n-1/2}$ and $z_{n+1/2}$ are the depths of the top and bottom faces of the cell, respectively. Consider that the profile is discretized into $N$ cells, with $N+1$ faces. Using the method of lines we reduce our system of two PDEs to a system of $2N$ ODEs, as follows. Considering a single control volume at depth index $n$, we can write
 
 \begin{equation} \label{eq: massAndEnergy}
 	\begin{array}{rcl}
@@ -347,7 +347,7 @@ For a one-dimensional vertical model, with $z$ (m) representing the depth below 
 + \left . \frac{dm_i}{dt}\right |_n
 & 
 \displaystyle 
-= -\rho_l\nabla q_n
+= -\rho_l\nabla \cdot \mathbf{q}_n
 %&
 %		\displaystyle
 %=\frac{(q_{l,n-1/2}-q_{l,n+1/2})\rho_l}{z_{n+1/2}-z_{n-1/2}}
@@ -356,7 +356,7 @@ For a one-dimensional vertical model, with $z$ (m) representing the depth below 
 \left . \frac{du}{dt}\right |_n
 & 
 \displaystyle 
-= -\nabla j_n
+= -\nabla \cdot \mathbf{j}_n
 %&
 %		\displaystyle
 %=\frac{(j_{a,n-1/2}-j_{a,n+1/2})
@@ -366,12 +366,18 @@ For a one-dimensional vertical model, with $z$ (m) representing the depth below 
 	\end{array}
 \end{equation}
 
-where $\nabla q_n$ and $\nabla j_n$ are the net fluxes of mass and energy into the control volume. Expressing these equations with total mass, $m$ and temperature $T$ as the dependent variables we have 
+where $\nabla\cdot \mathbf{q}_n$ and $\nabla \cdot \mathbf{j}_n$ are the net fluxes of mass and energy into the control volume. Expressing these equations with total mass, $m$ and temperature $T$ as the dependent variables we have 
 
 \begin{equation} 
 \left . \frac{dm}{dt} \right |_n
-=-\rho_l \nabla q_n
+=-\rho_l \nabla \cdot \mathbf{q}_n
 \end{equation}
+
+\begin{equation} 
+\left . \frac{du}{dt} \right |_n
+=-\nabla \cdot \mathbf{j}_n
+\end{equation}
+
 
 \begin{equation} 
 \left . \frac{dT}{dt} \right |_n
@@ -379,7 +385,7 @@ where $\nabla q_n$ and $\nabla j_n$ are the net fluxes of mass and energy into t
 \left \{
 	\begin{array}{ll}
 \displaystyle
-\frac{ \nabla j_n
+\frac{\left . \frac{du}{dt} \right |_n
 -c_{pl}T_n
 \left . \frac{dm}{dt} \right |_n
 }{c_{pb}
@@ -388,7 +394,7 @@ where $\nabla q_n$ and $\nabla j_n$ are the net fluxes of mass and energy into t
 &\displaystyle  \psi_{e,n} \leq \psi_{f,n}
 \\[1.0em]
 \displaystyle
-\frac{\nabla j_n
+\frac{\left . \frac{du}{dt} \right |_n
 -(c_{pi}T_n-\lambda_f)
 \left . \frac{dm}{dt} \right |_n
 }{c_{pb}
@@ -406,13 +412,13 @@ Expanding the flux terms we have
 \begin{equation} \label{eq: massAndEnergy}
 	\begin{array}{rl}
 \displaystyle 
--\rho_l\nabla q_n
+-\rho_l\nabla\cdot \mathbf{q}_n
 &
 		\displaystyle
 =\frac{(q_{l,n-1/2}-q_{l,n+1/2})\rho_l}{z_{n+1/2}-z_{n-1/2}}
 \\[1.0em]
 \displaystyle 
--\nabla j_n
+-\nabla \cdot \mathbf{j}_n
 &
 		\displaystyle
 =\frac{(j_{a,n-1/2}-j_{a,n+1/2})
@@ -446,7 +452,7 @@ j_{c,n+1/2}&\displaystyle =-\kappa_{n+1/2}\left(\frac{T_{n+1}-T_{n}}{z_{n+1}-z_{
 \end{array}
 \end{equation}
 
-For the advected heat fluxes here we assume the water flux is positive in the $z$ direction, such that $T_{n-1}$ is the downstream temperature at point $n-1/2$, and $T_n$ is the upstream temperature at point $n+1/2$. Alternative formulations for advection may be considered, but we will not expand on this here.  The term $j_o$ will be zero for all $n$ except $n=1$, that is the upper boundary condition (i.e. $j_{o,1/2}\neq 0$). 
+For the advected heat fluxes here we assume the water flux is positive in the $z$ direction, such that $T_{n-1}$ is the downstream temperature at point $n-1/2$, and $T_n$ is the upstream temperature at point $n+1/2$. Alternative formulations for advection may be considered, but we will not expand on this here.  The term $j_o$ will be zero for all $n$ except $n=1$ or $n=N$, that is the upper and lower boundary condition, where a specified direct heat flux (e.g. from net radiation or the geothermal heat flux) may be applied.
 
 Consider a soil profile subject to a vertical infiltration flux $q_a$ (m s$^{-1}$), a drainage flux, $q_d$ (m s$^{-1}$) and an evaporative loss term $q_e$ (m s$^{-1}$). The following boundary conditions can be used, where index $n=1$ represents the ground surface and $n=N$ is the lower boundary: 
 
@@ -472,7 +478,9 @@ j_{o,N+1/2}& =0
 
 where all $j$ terms have units (J m$^{-2}$ s$^{-1}$), and $j_{a,T}$ is advection with net infiltrating water, $j_{g,T}$ is the ground heat flux, driven by conduction across the soil surface (important when there is snow on the ground), $j_r$ is net radiation, $j_h$ is the sensible heat lost (advection with the movement of air), $j_e$ is the latent heat lost to evaporation (advection of water vapor),  $j_{a,B}$ is advection with water draining out the base of the soil and $j_{g,B}$ is the conductive heat flux across the lower boundary. The different flux terms in Eq \ref{eq: BCs} may be zero under different scenarios (e.g. snow cover, bare soil, etc) or assumptions. 
 
-We have here a system of ordinary differential equations which we solve using an ODE solver with the method of lines. 
+We have here a system of ordinary differential equations which we solve using an ODE solver using the method described in Ireson et al (2023).
+
+
 
 \section{Hydraulic and thermal properties}
 
@@ -563,6 +571,8 @@ $K_s$ & Saturated hydraulic conductivity & 3.76$\times 10^{-6}$ & m s$^{-1}$ \\
 $c_{ps}$ & Soil solids specific heat capacity &  850 & J kg$^{-1}$ K$^{-1}$ \\
 $\kappa_S$ & Soil solids thermal conductivity & 2.9 & J s$^{-1}$ m$^{-1}$ K$^{-1}$ \\
 $\rho_S$ & Soil solids density & 2600 & kg m$^{-3}$ \\
+$q$ & Applied uniform flux for transport only & 0 & m s $^{-1}$ \\
+$\text{impedence}$ & Impedence parameter for frozen $K$ & 0 & (-) \\
 \hline
 		\end{tabular}
 \caption{Model parameters are specific to the soil properties}
@@ -629,5 +639,9 @@ $\lambda_f$ & Latent heat of fusion & 0.334$\times 10^6$ &  J kg$^{-1}$ \\
 
 %\bibliographystyle{apalike} %plainnat}
 %\bibliography{master}
+
+\section{References}
+
+Ireson, A. M., Spiteri, R. J., Clark, M. P., \& Mathias, S. A. (2023). A simple, efficient, mass-conservative approach to solving Richards’ equation (openRE, v1.0). Geoscientific Model Development, 16(2), 659–677. https://doi.org/10.5194/gmd-16-659-2023
 
 \end{document}
