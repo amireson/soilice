@@ -52,7 +52,7 @@ def Richards(t,psif,psie,dz,pars,const,opts,nz,upperBC):
     return dthetaTdt,dpsiedt,q
 
 @njit(inline='always')
-def heatbalanceFun(t,psie,psif,T,TTop,TBot,jTopAdv,jTopNonAdv,dz,pars,const,opts,nz,dthetaTdt,q):
+def heatbalanceFun(t,psie,psif,T,TTop,TBot,jTopAdv,jTopBC,jBotBC,dz,pars,const,opts,nz,dthetaTdt,q):
 
     # Determine the thermal cond and heat capacity for given temperature
     kappa=thermalKfun(psie,psif,T,pars,const)
@@ -65,10 +65,11 @@ def heatbalanceFun(t,psie,psif,T,TTop,TBot,jTopAdv,jTopNonAdv,dz,pars,const,opts
 
     # Upper conduction boundary - no conduction (note jG comes in as advection, even if it is conduction):
     jd[0]=-kappa[0]*(T[0]-TTop)/(dz[0]/2.)*opts['conductionTop']
-    jd[0] += jTopNonAdv
+    jd[0] += jTopBC
     
     # Lower boundary - no conduction:
     jd[-1]=-kappa[-1]*(TBot-T[-1])/(dz[-1]/2.)*opts['conductionBot']
+    jd[-1] += jBotBC
     
     # Calculate the advective heat flux:
     ja=np.zeros(nz+1)
@@ -110,7 +111,7 @@ def heatbalanceFun(t,psie,psif,T,TTop,TBot,jTopAdv,jTopNonAdv,dz,pars,const,opts
     return dTdt,j
 
 @njit(inline='always')
-def ODEfunCall(t,DV,upperBC,TTop,TBot,TInf,jTopBC,dz,pars,const,opts,nz):
+def ODEfunCall(t,DV,upperBC,TTop,TBot,TInf,jTopBC,jBotBC,dz,pars,const,opts,nz):
 
     ind_psi=np.arange(nz)*2+2
     ind_T=np.arange(nz)*2+3
@@ -129,8 +130,7 @@ def ODEfunCall(t,DV,upperBC,TTop,TBot,TInf,jTopBC,dz,pars,const,opts,nz):
 
     if opts['simulateTransport']:
         jTopAdv=q[0]*const['cp_liq']*const['rho_liq']*TInf
-        jTopNonAdv=jTopBC
-        dTdt,j=heatbalanceFun(t,psie,psif,T,TTop,TBot,jTopAdv,jTopNonAdv,dz,pars,const,opts,nz,dthetaTdt,q)
+        dTdt,j=heatbalanceFun(t,psie,psif,T,TTop,TBot,jTopAdv,jTopBC,jBotBC,dz,pars,const,opts,nz,dthetaTdt,q)
     else:
         dTdt=np.zeros(nz)
         j=np.zeros(nz+1)

@@ -59,8 +59,8 @@ def MakeDictFloat():
     return d
 
 # Model function wrapper, called by ODE solver
-def ODEfun(t,DV,upperBC,TTop,TBot,TInf,jTopBC,dz,pars,const,opts,nz):
-    return ODEfunCall(t,DV,upperBC,TTop,TBot,TInf,jTopBC,dz,pars,const,opts,nz)
+def ODEfun(t,DV,upperBC,TTop,TBot,TInf,jTopBC,jBotBC,dz,pars,const,opts,nz):
+    return ODEfunCall(t,DV,upperBC,TTop,TBot,TInf,jTopBC,jBotBC,dz,pars,const,opts,nz)
 
 # Main class that setups and runs the model
 class model:
@@ -224,7 +224,7 @@ class model:
         self.t=np.arange(0,tMax+dt,dt)
         self.nt=len(self.t)
         
-    def setBCs(self,jTopBC=0,qI=0,psiT=0,TInf=0,TTop=0,TBot=0):
+    def setBCs(self,jTopBC=0,jBotBC=0,qI=0,psiT=0,TInf=0,TTop=0,TBot=0):
         
         def _to_timeseries(x):
             if np.ndim(x) == 0:        
@@ -233,6 +233,7 @@ class model:
                 return x
 
         self.jTopBC = _to_timeseries(jTopBC)
+        self.jBotBC = _to_timeseries(jBotBC)
         self.qI     = _to_timeseries(qI)
         self.psiT   = _to_timeseries(psiT)
         self.TInf   = _to_timeseries(TInf)
@@ -331,7 +332,10 @@ s::::::::::::::s o:::::::::::::::oi::::::il::::::li::::::i c:::::::::::::::::c e
         for i in range(self.nt-1):
             
             r.set_initial_value(np.hstack([0,0,DV[i,2:-2],0,0]), 0)
-            params=(self.upperBC[i],self.TTop[i],self.TBot[i],self.TInf[i],self.jTopBC[i],self.dz,parsD,constD,optsD,self.nz)
+            params=(
+                    self.upperBC[i],self.TTop[i],self.TBot[i],
+                    self.TInf[i],self.jTopBC[i],self.jBotBC[i],
+                    self.dz,parsD,constD,optsD,self.nz)
             
             r.set_f_params(*params)
             r.integrate(self.dt)
@@ -348,7 +352,7 @@ s::::::::::::::s o:::::::::::::::oi::::::il::::::li::::::i c:::::::::::::::::c e
         inOut=modelInOut()
         for i in ['dt','nt','t','dz','nz','z','z0','zMax',
                   'pars','const',
-                  'jTopBC','TInf','TTop','TBot',
+                  'jTopBC','jBotBC','TInf','TTop','TBot',
                   'T0','psi0','opts','rtol']: 
             setattr(inOut, i, getattr(self, i))
 
