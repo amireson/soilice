@@ -71,7 +71,7 @@ pl.grid(); pl.show()
 
 # Running the testcases
 
-For a more complete introduction of how to setup and run the model, and visualize the output, refer to the example notebooks. These are simple boundary value problems that are configured in Jupyter notebooks, available [here](notebooks/runSoil_Infiltration.ipynb).
+For a more complete introduction of how to setup and run the model, and visualize the output, refer to the example notebooks. These are simple boundary value problems that are configured in Jupyter notebooks, available [here](notebooks).
 
 # User guide
 
