@@ -80,6 +80,7 @@ def SFCslope(psie,psif,pars,const):
     C=const['lambda_f']/const['g']/const['T0']
     dthdpsi=CFun(psif,pars)
     dthdT=C*dthdpsi
+    dthdT[psie==psif]=0.
     return dthdT
     
 # GCE
