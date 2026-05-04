@@ -19,6 +19,7 @@ from scipy.integrate import ode
 
 import dill
 import ast
+from pathlib import Path
 
 # First try to import constitutive functions from the local folder, where
 # the user may put custom functions. If the customized file does not exist
@@ -37,7 +38,7 @@ try:
 except ImportError:
     from soilice.src_conservationFunctions import Richards, heatbalanceFun, ODEfunCall
 
-from .utils import modelInOut
+from .utils import modelInOut, writeDefaultPars
 
 #############################################
 #
@@ -165,6 +166,13 @@ class model:
         print('*************************************************************************\n')
 
     def readPars(self,filename='def'):
+
+        dest_path = Path('.') / f'{filename}_pars.txt'
+        if dest_path.exists():
+            pass
+        else:
+            writeDefaultPars(filename=filename)
+
         # Read parameters and constants from text file.
         filename=filename.replace('_pars','')
         filename=filename.replace('_const','')
