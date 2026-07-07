@@ -129,7 +129,7 @@ def ODEfunCall(t,DV,upperBC,TTop,TBot,TInf,jTopBC,jBotBC,dz,pars,const,opts,nz):
         q=np.full(nz+1, np.asarray(pars['q']).ravel()[0])
 
     if opts['simulateTransport']:
-        TTopAdv=Tinf
+        TTopAdv=TInf
         if q[0]<0: TTopAdv=T[0]
         jTopAdv=q[0]*const['cp_liq']*const['rho_liq']*TTopAdv
         dTdt,j=heatbalanceFun(t,psie,psif,T,TTop,TBot,jTopAdv,jTopBC,jBotBC,dz,pars,const,opts,nz,dthetaTdt,q)
