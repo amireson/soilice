@@ -236,9 +236,9 @@ class model:
         
         def _to_timeseries(x):
             if np.ndim(x) == 0:        
-                return np.zeros(self.nt)+x
+                return np.full(self.nt,x)
             else:
-                return x
+                return np.asarray(x)
 
         self.jTopBC = _to_timeseries(jTopBC)
         self.jBotBC = _to_timeseries(jBotBC)
@@ -260,7 +260,7 @@ class model:
             elif len(x) == 2:
                 # Linear initial condition from top to bottom:
                 return np.interp(self.z,[self.z0,self.zMax],x)
-            elif len(x)==self.nz:
+            elif len(x)==np.asarray(self.nz):
                 # Fully specified 
                 return x
 
