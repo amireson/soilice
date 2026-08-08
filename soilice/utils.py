@@ -34,6 +34,7 @@ def writeDefaultPars(daily=True,filename='def'):
         return
 
     # Save default parameter and constant values to textfiles in the working folder
+    # Default parameters are for Guelph Loam Drying, VG, and from Williams and Smith, 1989, p. 90.
     
     dailyScaling=86400 if daily else 1
     # hydraulic properties based on VG 1980 Guelph Loam (Drying)
@@ -52,15 +53,15 @@ def writeDefaultPars(daily=True,filename='def'):
     
     # Thermal Parameters
     # Specific heat capacities
-    pars['cp_soil']= 850.                   # J/kg/K
-    pars['cp_org']= 580.                    # J/kg/K 
+    pars['cp_soil']= 900.                   # J/kg/K
+    pars['cp_org']= 1920.                   # J/kg/K 
     
     # Thermal conductivity
-    pars['kappa_soil']=2.9*dailyScaling     # J/s/m/K
+    pars['kappa_soil']=2.92*dailyScaling    # J/s/m/K
     pars['kappa_org']=0.25*dailyScaling     # J/s/m/K added
     
     # Densities 
-    pars['rho_soil']=2600.        # kg/m3 changed 
+    pars['rho_soil']=2650.        # kg/m3 changed 
     pars['rho_org']=1300.         # kg/m3 added
 
     # Misc
@@ -70,13 +71,13 @@ def writeDefaultPars(daily=True,filename='def'):
     const = {}
     const['stefanBoltzmann']=5.670374419e-8 # J/m2/s/K
     const['rho_liq']=1000.                  # Density of liquid water kg/m3
-    const['rho_ice']=918.                   # Density of ice kg/m3
-    const['rho_air']=1.293                  # Default air density kg/m3
+    const['rho_ice']=917.                   # Density of ice kg/m3
+    const['rho_air']=1.2                    # Default air density kg/m3
     const['cp_liq']=4180.                   # Specific heat capacity of liquid water J/kg/K
     const['cp_ice']=2100.                   # Specific heat capacity of liquid ice J/kg/K
-    const['cp_air']=1006.                   # Specific heat capacity of air J/kg/K
+    const['cp_air']=1010.                   # Specific heat capacity of air J/kg/K
     const['kappa_liq']=0.56*dailyScaling    # Thermal conductivity of liquid water J/s/m/K
-    const['kappa_ice']=2.2*dailyScaling     # Thermal conductivity of ice J/s/m/K
+    const['kappa_ice']=2.24*dailyScaling     # Thermal conductivity of ice J/s/m/K
     const['kappa_air']=0.025*dailyScaling   # Thermal conductivty of air J/s/m/K
     const['lambda_f']=0.334e6               # Latent heat of fusion J/kg
     const['lambda_v']=2.26e6                # Latent heat of vaporization J/kg
