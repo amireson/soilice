@@ -1,20 +1,22 @@
-soiliceDoc.pdf: soiliceDoc.tex
-	pdflatex soiliceDoc.tex
-	pdflatex soiliceDoc.tex
-	rm -f soiliceDoc.aux
-	rm -r soiliceDoc.log
-	rm -f soiliceDoc.out
-	rm -f soiliceDoc.synctex.gz
-	open soiliceDoc.pdf
+fn=soiliceDocR1
+
+$(fn).pdf: $(fn).tex
+	pdflatex $(fn).tex
+	pdflatex $(fn).tex
+	rm -f $(fn).aux
+	rm -f $(fn).log
+	rm -f $(fn).out
+	rm -f $(fn).synctex.gz
+	open $(fn).pdf
 
 .PHONY: clean
 
 clean:
-	rm -f soiliceDoc.aux
-	rm -f soiliceDoc.log
-	rm -f soiliceDoc.out
-	rm -f soiliceDoc.synctex.gz
-	rm -f soiliceDoc.fdb_latexmk
-	rm -f soiliceDoc.fls
-	rm -f soiliceDoc.bbl
-	rm -f soiliceDoc.blg
+	rm -f $(fn).aux
+	rm -f $(fn).log
+	rm -f $(fn).out
+	rm -f $(fn).synctex.gz
+	rm -f $(fn).fdb_latexmk
+	rm -f $(fn).fls
+	rm -f $(fn).bbl
+	rm -f $(fn).blg
