@@ -126,16 +126,16 @@ class modelInOut:
         du=u-u[0]
         m=ml+mi
         dm=m-m[0]
-        qT=self.qT.cumsum()*self.const['rho_liq']
-        qB=self.qB.cumsum()*self.const['rho_liq']
-        E_AT=self.E_AT.cumsum()*self.const['rho_liq']
-        E_AS=self.E_AS.cumsum()*self.const['rho_liq']
+        qT=self.qT.cumsum()*self.const['rho_liq']*self.dt
+        qB=self.qB.cumsum()*self.const['rho_liq']*self.dt
+        E_AT=self.E_AT.cumsum()*self.const['rho_liq']*self.dt
+        E_AS=self.E_AS.cumsum()*self.const['rho_liq']*self.dt
         qOut=qB+E_AT+E_AS
         rmseW,biasW=err(qT,qOut,dm)
         
-        jT=self.jT.cumsum()
-        jB=self.jB.cumsum()
-        jE=self.jE.cumsum()
+        jT=self.jT.cumsum()*self.dt
+        jB=self.jB.cumsum()*self.dt
+        jE=self.jE.cumsum()*self.dt
         jOut=jB+jE
         rmseH,biasH=err(jT,jOut,du)
         
@@ -164,14 +164,14 @@ class modelInOut:
         du=u-u[0]
         m=ml+mi
         dm=m-m[0]
-        qT=self.qT.cumsum()*self.const['rho_liq']
-        qB=self.qB.cumsum()*self.const['rho_liq']
-        E_AT=self.E_AT.cumsum()*self.const['rho_liq']
-        E_AS=self.E_AS.cumsum()*self.const['rho_liq']
+        qT=self.qT.cumsum()*self.const['rho_liq']*self.dt
+        qB=self.qB.cumsum()*self.const['rho_liq']*self.dt
+        E_AT=self.E_AT.cumsum()*self.const['rho_liq']*self.dt
+        E_AS=self.E_AS.cumsum()*self.const['rho_liq']*self.dt
         
-        jT=self.jT.cumsum()
-        jB=self.jB.cumsum()
-        jE=self.jE.cumsum()
+        jT=self.jT.cumsum()*self.dt
+        jB=self.jB.cumsum()*self.dt
+        jE=self.jE.cumsum()*self.dt
 
         qOut=qB+E_AT+E_AS
         jOut=jB+jE

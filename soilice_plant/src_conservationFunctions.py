@@ -4,12 +4,12 @@ from numba import njit
 try:
     from src_constitutiveFunctions import thetaFun, CFun, KFun, thermalKfun, SFCslope, GCEFun, CBFun
 except ImportError:
-    from soilice_plant.src_constitutiveFunctions import thetaFun, CFun, KFun, thermalKfun, SFCslope, GCEFun, CBFun
+    from .src_constitutiveFunctions import thetaFun, CFun, KFun, thermalKfun, SFCslope, GCEFun, CBFun
 
 try:
     from src_plantFuns import rootUptake, soilEvaporation
 except ImportError:
-    from soilice_plant.src_plantFuns import rootUptake, soilEvaporation
+    from .src_plantFuns import rootUptake, soilEvaporation
 
 #############################################
 #
@@ -160,16 +160,13 @@ def ODEfunCall(t,DV,upperBC,TTop,TBot,TInf,jTopBC,jBotBC,E_PT,E_PS,z,dz,pars,con
         j=np.zeros(nz+1)
         jE=0.
         
-    dDVdt=np.zeros(2*nz+7)
+    dDVdt=np.zeros(2*nz+4)
     dDVdt[ind_psi]=dpsiedt
     dDVdt[ind_T]=dTdt
     dDVdt[0]=q[0]
     dDVdt[1]=j[0]
-    dDVdt[-5]=q[-1]
-    dDVdt[-4]=j[-1]
-    dDVdt[-3]=E_AT
-    dDVdt[-2]=E_AS
-    dDVdt[-1]=jE
+    dDVdt[-2]=q[-1]
+    dDVdt[-1]=j[-1]
 
     return dDVdt
 

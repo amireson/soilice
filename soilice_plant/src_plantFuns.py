@@ -70,3 +70,26 @@ def soilEvaporation(E_PS,psie,T,dz,pars):
     sv=-E_PS*gamma/dz[0]
     return sv
  
+@njit(inline='always')
+def getEvapFluxes(E_PT,E_PS,psie,T,z,dz,nt,pars,const):
+    E_AT=np.zeros(nt)
+    E_AS=np.zeros(nt)
+    jE=np.zeros(nt)
+    
+    for i in range(nt):
+        sv=rootUptake(E_PT[i],psie[i,:],T[i,:],z,dz,pars)
+        E_AT[i]=-np.sum(sv*dz)
+        s_ES=soilEvaporation(E_PS[i],psie[i,:],T[i,:],dz,pars)
+        E_AS[i]=-s_ES*dz[0]
+        sv[0]+=s_ES
+        su=sv*const['cp_liq']*const['rho_liq']*T[i,:]
+        jE[i]=-np.sum(su*dz)
+
+    E_AT[1:]=(E_AT[1:]+E_AT[:-1])/2.
+    E_AT[0]=0.
+    E_AS[1:]=(E_AS[1:]+E_AS[:-1])/2.
+    E_AS[0]=0.
+    jE[1:]=(jE[1:]+jE[:-1])/2.
+    jE[0]=0.
+
+    return E_AT,E_AS,jE

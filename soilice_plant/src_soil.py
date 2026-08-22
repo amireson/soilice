@@ -28,7 +28,7 @@ try:
     from src_constitutiveFunctions import ( 
         thetaFun, CFun, KFun, thermalKfun, SFCslope, GCEFun, CBFun )
 except ImportError:
-    from soilice_plant.src_constitutiveFunctions import ( 
+    from .src_constitutiveFunctions import ( 
         thetaFun, CFun, KFun, thermalKfun, SFCslope, GCEFun, CBFun )
     
 # As above if user specified edits to the conservation equations exist
@@ -36,7 +36,12 @@ except ImportError:
 try: 
     from src_conservationFunctions import Richards, heatbalanceFun, ODEfunCall
 except ImportError:
-    from soilice_plant.src_conservationFunctions import Richards, heatbalanceFun, ODEfunCall
+    from .src_conservationFunctions import Richards, heatbalanceFun, ODEfunCall
+
+try:
+    from src_plantFuns import getEvapFluxes
+except ImportError:
+    from .src_plantFuns import getEvapFluxes
 
 from .utils import modelInOut, writeDefaultPars
 
@@ -396,7 +401,7 @@ s::::::::::::::s o:::::::::::::::oi::::::il::::::li::::::i c:::::::::::::::::c e
         psie[0,:]=self.psi0
         fluxes=np.zeros((self.nt,4))
         
-        DV = np.zeros((self.nt,2*self.nz+7),dtype=np.float64)
+        DV = np.zeros((self.nt,2*self.nz+4),dtype=np.float64)
         ind_psi=np.arange(self.nz)*2+2
         ind_T=np.arange(self.nz)*2+3
         
@@ -404,12 +409,13 @@ s::::::::::::::s o:::::::::::::::oi::::::il::::::li::::::i c:::::::::::::::::c e
         DV[0,ind_T] = self.T0
             
         r = ode(ODEfun)
-        r.set_integrator('vode',method='BDF',uband=3,lband=3,rtol=self.rtol)
+        #r.set_integrator('vode',method='BDF',uband=10,lband=10,rtol=self.rtol)
+        r.set_integrator('vode',method='BDF',rtol=self.rtol)
         
         tic=time.time()
         for i in range(self.nt-1):
             
-            r.set_initial_value(np.hstack([0,0,DV[i,2:-5],0,0,0,0,0]), 0)
+            r.set_initial_value(np.hstack([0,0,DV[i,2:-2],0,0]), 0)
             params=(
                     self.upperBC[i],self.TTop[i],self.TBot[i],
                     self.TInf[i],self.jTopBC[i],self.jBotBC[i],
@@ -443,13 +449,10 @@ s::::::::::::::s o:::::::::::::::oi::::::il::::::li::::::i c:::::::::::::::::c e
         
         inOut.psie=DV[:,ind_psi]
         inOut.T=DV[:,ind_T]
-        inOut.qT=DV[:,0]
-        inOut.jT=DV[:,1]
-        inOut.qB=DV[:,-5]
-        inOut.jB=DV[:,-4]
-        inOut.E_AT=DV[:,-3]
-        inOut.E_AS=DV[:,-2]
-        inOut.jE=DV[:,-1]
+        inOut.qT=DV[:,0]/self.dt
+        inOut.jT=DV[:,1]/self.dt
+        inOut.qB=DV[:,-2]/self.dt
+        inOut.jB=DV[:,-1]/self.dt
         
         i,j=T.shape
         inOut.psif=np.array([GCEFun(inOut.T[i,:],parsD,constD) for i in range(self.nt)])
@@ -457,6 +460,13 @@ s::::::::::::::s o:::::::::::::::oi::::::il::::::li::::::i c:::::::::::::::::c e
         inOut.thetaL=np.array([thetaFun(inOut.psif[i,:],parsD) for i in range(self.nt)])
         inOut.thetaT=np.array([thetaFun(inOut.psie[i,:],parsD) for i in range(self.nt)])
         inOut.thetaI=self.const['rho_liq']/self.const['rho_ice']*(inOut.thetaT-inOut.thetaL)
+
+        # Get evaporation fluxes:
+        E_AT,E_AS,jE=getEvapFluxes(self.E_PT,self.E_PS,inOut.psie,inOut.T,self.z,self.dz,self.nt,parsD,constD)
+
+        inOut.E_AT=E_AT
+        inOut.E_AS=E_AS
+        inOut.jE=jE
 
         # Print mass/energy balance errors:
         inOut.balanceClosure()
