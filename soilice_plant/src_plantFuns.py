@@ -169,3 +169,14 @@ def GetPotentialEvap(SWnet,LWnet,Ta,P,RH,U,G,pars,const,rs):
     PE[PE<0]=0
     
     return PE
+
+def referenceCropET(SWin,LWin,Ta,P,RH,U,G,pars,const):
+    albedo=0.23               # -
+    rs=70.                    # s/m
+    pars['canopyHeight']=0.12 # m
+    
+    # Net radiation
+    SWnet=SWin*(1-albedo)
+    LWnet=LWin-const['stefanBoltzmann']*(Ta+273.15)**4
+    
+    return GetPotentialEvap(SWnet,LWnet,Ta,P,RH,U,G,pars,const,rs)
