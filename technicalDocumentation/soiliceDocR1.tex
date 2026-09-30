@@ -763,6 +763,139 @@ s_{u,1}=s_{v,1}\rho_l c_{pl}T_1
 
 must again be applied. Again, we assume that $\gamma=0$ if the top layer of the soil is frozen.
 
+\section{Potential evaporation and transpiration}
+
+The Penman-Monteith combination equation (PMCE) is used here to quantify both potential evaoration and potential transpiration. Two alternative approaches are implemented: i) based on calculated potential evapotranspiration for a reference crop, and then scaling this to the actual crop using crop coefficient; and ii) based on using vegetation parameters directly in the PMCE. For all symbols in this section refer to Table \ref{tab: PMCE}. A general form of the PMCE is given by
+
+\begin{equation}
+\lambda_v E =
+\frac{
+    \Delta (R_n-G)
+    + \rho_a c_{p,a} \dfrac{e_s-e_a}{r_a}
+}{
+    \Delta + \gamma\left(1+\dfrac{r_s}{r_a}\right)
+}
+\end{equation}
+
+Here the psychrometric constant, $\gamma$, is given by 
+
+\begin{equation}
+\gamma=\dfrac{c_{p,a}P}{\epsilon \lambda_v}
+\end{equation}
+
+where $\epsilon = 0.622$. $\Delta$ is the slope of the saturation vapor pressure curve, $de_s/dT_a$. If we assume
+
+\begin{equation}
+e_s(T)=0.6108\exp\left(\dfrac{17.27T_a}{T_a+273.3}\right)
+\end{equation}
+
+then we have 
+
+\begin{equation}
+\Delta = \dfrac{4098e_s(T_a)}{(T_a+273.3)^2}
+\end{equation}
+
+We do not typically observe the density of air, $\rho_a$, and therefore we make a substitution based on the ideal gas law
+
+\begin{equation}
+\rho_a=\dfrac{P}{R_d(T_a+273.15)}
+\end{equation}
+
+where $R_d$ is the specific gas constant for dry air J kg$^{-1}$ K$^{-1}$. 
+
+The aerodynamic resistance can be estimated from
+
+\begin{equation}
+r_a =
+\frac{
+    \ln\left(\dfrac{z_u-d}{z_{0m}}\right)
+    \ln\left(\dfrac{z_e-d}{z_{0h}}\right)
+}{
+    k^2 u_z
+}
+\end{equation}
+
+where
+
+\begin{equation}
+	\begin{array}{c}
+d = \frac{2}{3}h\\
+z_{0m} = 0.123h\\
+z_{0h} = 0.1z_{0m} = 0.0123h
+	\end{array}
+\end{equation}
+
+\begin{table}[h] \label{tab: PMCE}
+\centering
+\begin{tabular}{lll}
+\hline
+Symbol & Description & Units \\
+\hline
+$\lambda_v E$ & Latent heat flux & $\mathrm{W\,m^{-2}}$ \\
+$R_n$ & Net radiation & $\mathrm{W\,m^{-2}}$ \\
+$G$ & Ground heat flux & $\mathrm{W\,m^{-2}}$ \\
+$\Delta$ & Slope of saturation vapour pressure curve & $\mathrm{Pa\,K^{-1}}$ \\
+$\rho_a$ & Air density & $\mathrm{kg\,m^{-3}}$ \\
+$c_{p,a}$ & Specific heat capacity of air & $\mathrm{J\,kg^{-1}\,K^{-1}}$ \\
+$e_s$ & Saturation vapour pressure & $\mathrm{Pa}$ \\
+$e_a$ & Actual vapour pressure & $\mathrm{Pa}$ \\
+$\gamma$ & Psychrometric constant & $\mathrm{Pa\,K^{-1}}$ \\
+$r_a$ & Aerodynamic resistance & $\mathrm{s\,m^{-1}}$ \\
+$r_s$ & Surface resistance & $\mathrm{s\,m^{-1}}$ \\
+$z_u$ & Wind-speed measurement height & $\mathrm{m}$ \\
+$z_e$ & Humidity measurement height & $\mathrm{m}$ \\
+$d$ & Zero-plane displacement height & $\mathrm{m}$ \\
+$z_{0m}$ & Roughness length for momentum transfer & $\mathrm{m}$ \\
+$z_{0h}$ & Roughness length for heat and vapour transfer & $\mathrm{m}$ \\
+$k$ & von K\'arm\'an constant ($\approx 0.41$) & -- \\
+$u_z$ & Wind speed at height $z_u$ & $\mathrm{m\,s^{-1}}$ \\
+$h$ & Vegetation height & $\mathrm{m}$ \\
+\hline
+\end{tabular}
+\end{table}
+
+
+
+\subsection{Reference crop approach}
+
+Here we assume that $h=0.12$ m and $r_s = 70$ s m$^{-1}$. These can be substituted into the equations above to get a simplified expression for $E$
+
+\subsection{Directly specified vegetation parameters}
+Use $h$ for specific veg and note that it can change with season. $r_s$ is a parameter that will likely be related to LAI.
+
+[{\bf [NOTE}: I haven't here dealt with partitioning of $E$ and $T$. Need to use a weighted average based on the landcover].
+
+\section{Solute transport}
+
+In the mass of solute, $M_c$ (kg) per total control volume is $m_c$ (kg m$^{-3}$), that is
+\begin{equation}
+m_c=\frac{M_c}{V}
+\end{equation}
+
+The mass per volume of liquid water is the concentration, $c$  (kg m$^{-3}$), such that
+
+\begin{equation}
+c=\frac{M_c}{V_L}=\frac{m_c}{\theta_l}
+\end{equation}
+
+The mass conservation equation is
+
+\begin{equation}
+\frac{\partial m_c}{\partial t}=-\nabla\cdot\mathbf{j}_s
+\end{equation}
+
+The finite difference form of this is 
+
+\begin{equation}
+\left . \frac{d m_c}{d t}\right |_n=
+\frac{j_{s,n-1/2}-j_{s,n+1/2}}{z_{n+1/2}-z_{n-1/2}}
+\end{equation}
+
+The fluxes are given by
+
+
+
+
 \section{References}
 
 Ireson, A. M., Spiteri, R. J., Clark, M. P., \& Mathias, S. A. (2023). A simple, efficient, mass-conservative approach to solving Richards’ equation (openRE, v1.0). Geoscientific Model Development, 16(2), 659–677. https://doi.org/10.5194/gmd-16-659-2023
