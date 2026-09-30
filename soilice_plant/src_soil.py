@@ -45,73 +45,73 @@ except ImportError:
 
 from .utils import modelInOut, writeDefaultPars
 
-#############################################
-#
-# Plant root water uptake functions
-#
-#############################################
-@njit(inline='always')
-def rootStressFunction(psi_e,T,pars):
-    # We use loops here, because they are highly readable, and numba will compile them efficiently
-    beta=np.zeros(len(psi_e))
-    for i in range(len(psi_e)):
-        if T[i]<0:
-            # No transpiration from frozen soils
-            beta[i]=0.
-        elif psi_e[i]<pars['psi_wilt']:
-            # No transpiration from below wilting point
-            beta[i]=0.
-        elif psi_e[i]<pars['psi_opt']:
-            # Limited transpiration below optimum psi:
-            beta[i]=(psi_e[i]-pars['psi_wilt'])/(pars['psi_opt']-pars['psi_wilt'])
-        elif psi_e[i]<pars['psi_crit']:
-            # Unstressed transpiration below critical psi:
-            beta[i]=1.
-        else: 
-            # No transpiration above critical psi
-            beta[i]=0.
+# #############################################
+# #
+# # Plant root water uptake functions
+# #
+# #############################################
+# @njit(inline='always')
+# def rootStressFunction(psi_e,T,pars):
+#     # We use loops here, because they are highly readable, and numba will compile them efficiently
+#     beta=np.zeros(len(psi_e))
+#     for i in range(len(psi_e)):
+#         if T[i]<0:
+#             # No transpiration from frozen soils
+#             beta[i]=0.
+#         elif psi_e[i]<pars['psi_wilt']:
+#             # No transpiration from below wilting point
+#             beta[i]=0.
+#         elif psi_e[i]<pars['psi_opt']:
+#             # Limited transpiration below optimum psi:
+#             beta[i]=(psi_e[i]-pars['psi_wilt'])/(pars['psi_opt']-pars['psi_wilt'])
+#         elif psi_e[i]<pars['psi_crit']:
+#             # Unstressed transpiration below critical psi:
+#             beta[i]=1.
+#         else: 
+#             # No transpiration above critical psi
+#             beta[i]=0.
 
-    return beta
+#     return beta
 
-@njit(inline='always')
-def soilEvapStressFunction(psi_e,T,pars):
-    # Only consider the top cell here, i=0:
+# @njit(inline='always')
+# def soilEvapStressFunction(psi_e,T,pars):
+#     # Only consider the top cell here, i=0:
 
-    if T<0:
-        # No evaporation if the soil is frozen
-        gamma=0.
-    elif psi_e[0]<pars['psi_soilE_min']:
-        # No evaporation if the soil is dry
-        gamma=0.
-    elif psi_e[0]<pars['psi_soilE_max']:
-        # Limited evaporation below soilE_max
-        gamma=(psi_e[0]-pars['psi_soilE_min'])/(pars['psi_soilE_max']-pars['psi_soilE_min'])
-    else:
-        # Unstressed evaporation
-        gamma=1.
+#     if T<0:
+#         # No evaporation if the soil is frozen
+#         gamma=0.
+#     elif psi_e[0]<pars['psi_soilE_min']:
+#         # No evaporation if the soil is dry
+#         gamma=0.
+#     elif psi_e[0]<pars['psi_soilE_max']:
+#         # Limited evaporation below soilE_max
+#         gamma=(psi_e[0]-pars['psi_soilE_min'])/(pars['psi_soilE_max']-pars['psi_soilE_min'])
+#     else:
+#         # Unstressed evaporation
+#         gamma=1.
 
-    return gamma
-
-
-@njit(inline='always')
-def rootDensityFunction(z,dz,pars):
-    # Get relative root density, gr(z)
-    g=np.exp(-z/pars['rootDepth'])
-    gr=np.sum(g*dz)
-    return gr
-
-@njit(inline='always')
-def rootUptake(E_PT,psi_e,T,z,dz,pars):
-    beta=rootStressFunction(psi_e,T,pars)
-    gr=rootDensityFunction(z,dz,pars)
-    sv=-E_PT*beta*gr
-    return sv
+#     return gamma
 
 
-@njit(inline='always')
-def soilEvaporation(E_PS,psi_e,T,dz,pars):
-    gamma=soilEvapStressFunction(psi_e,T,pars)
-    sv=-E_PS*gamma/dz[1]
+# @njit(inline='always')
+# def rootDensityFunction(z,dz,pars):
+#     # Get relative root density, gr(z)
+#     g=np.exp(-z/pars['rootDepth'])
+#     gr=np.sum(g*dz)
+#     return gr
+
+# @njit(inline='always')
+# def rootUptake(E_PT,psi_e,T,z,dz,pars):
+#     beta=rootStressFunction(psi_e,T,pars)
+#     gr=rootDensityFunction(z,dz,pars)
+#     sv=-E_PT*beta*gr
+#     return sv
+
+
+# @njit(inline='always')
+# def soilEvaporation(E_PS,psi_e,T,dz,pars):
+#     gamma=soilEvapStressFunction(psi_e,T,pars)
+#     sv=-E_PS*gamma/dz[1]
     
 #############################################
 #

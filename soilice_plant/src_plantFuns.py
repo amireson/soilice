@@ -94,69 +94,78 @@ def getEvapFluxes(E_PT,E_PS,psie,T,z,dz,nt,pars,const):
 
     return E_AT,E_AS,jE
 
-@njit(inline='always')
-def gamma(p):  # gamma (KPa/deg c)
-    g = (0.665/1000)*p # p Atmo. pressure (KPa)
-    return g
 
-@njit(inline='always')
-def Delta(T,es):  # Delta (KPa/deg c)
-    d = (4098*es)/(T+237.3)**2
-    return d
 
-@njit(inline='always')
-def satvappres(T): # saturation vapour pressure (KPa)
-    es = 0.6108*np.exp((17.27*T)/(T+237.3))
+
+# @njit(inline='always')
+def satvappresFun(T): # saturation vapour pressure (Pa)
+    es = 0.6108*np.exp((17.27*T)/(T+237.3))*1000
     return es
 
-@njit(inline='always')
-def vappres(RH,es): # actual vapour pressure (KPa)
+# @njit(inline='always')
+def DeltaFun(T,es):  # Delta (Pa/deg C)
+    Delta = (4098*es)/(T+237.3)**2
+    return Delta
+
+# @njit(inline='always')
+def gammaFun(p,const):  # gamma (Pa/deg c)
+    gamma=const['cp_air']*p/const['epsilon']/const['lambda_v']
+    return gamma
+
+# @njit(inline='always')
+def vappresFun(RH,es): # actual vapour pressure (Pa)
     ea = (RH/100)*es
     return ea
 
-@njit(inline='always')
-def wind(uz,z): # wind speed at 2m height (m/s)
-    u2 = uz*4.87/np.log(67.8*z-5.42) # uz wind speed m/s measured at hieght z (m)
+# @njit(inline='always')
+def windFun(uz,pars): # calculate wind speed at 2m height (m/s)
+    u2 = uz*4.87/np.log(67.8*pars['z_u']-5.42) # uz wind speed m/s measured at hieght z (m)
     return u2
 
+# The Penman Monteith Combination Equation
+# @njit(inline='always')
+def GetPotentialEvap(SWnet,LWnet,Ta,P,RH,U,G,pars,const,rs):
+    
+    # Input variables with units:
+    Rn=(SWnet+LWnet)       # W/m2
+    # P                    # Pa
+    es=satvappresFun(Ta)   # Pa
+    ea=vappresFun(RH,es)   # Pa
+    gamma =gammaFun(P,const)     # Pa/deg C
+    Delta= DeltaFun(Ta,es) # Pa/deg C
+            
+    # Aerodynamic resistance:
+    d  = (2/3)*pars['canopyHeight']   # zero displacement height
+    z0m = 0.123*pars['canopyHeight']  # roughness length of momentum
+    z0h = 0.1*z0m                     # roughness length for heat and vapour transfer 
+    k  = 0.41                         # von Karman constant
 
-@njit(inline='always')
-def GetPotentialEvap(SWnet,LWnet,T,p,RH,uz,z,zavg,rs): # input data: SW&LW(W/m2), T(deg c), p(Pa), RH(%), uz(m/s), z(m)
-    
-    #Equation parameters with the righ units:    
-    
-    Rn=(SWnet+LWnet)*(0.0864)   # MJ/m2/d (as 30*60 is the number of secondes in period)
-    p = p/1000         # KPa
-    es=satvappres(T)   # KPa
-    ea=vappres(RH,es)  # KPa
-    g =gamma(p)        # KPa/deg c
-    delta= Delta(T,es)    # KPa/deg c
-    
-    # u2 (m/s)
-    if z==2:
-        u2=uz
-    else:
-        u2=wind(uz,z)
-        
-    # calculations for the aerodynamic resistance:
-    d  = (2/3)*zavg   #zero displacment height
-    z0 = 0.123*zavg # roughness length of momentum
-    k  = 0.41       # von Karman constant
-    
-    #1
-    ra = (np.log((2-d)/z0)*np.log((2-d)/(z0*0.1)))/(k**2)/u2  # the FAO eqaution (s/m)
+    ra = (
+        np.log((pars['z_u']-d)/z0m)
+        *np.log((pars['z_rh']-d)/(z0h))
+    )/(k**2)/U 
 
-    #2
-#     Uf = (k*u2)/np.log((2-d)/z0) # Dingman book equation
-#     ra=u2/(Uf**2)
+    # Density of air:
     
+    rho_air=P/const['Rd']/(Ta+273.15)
+    
+    # PM-Combination Eqn to return latent heat flux:
+    numerator=(
+        Delta*(Rn-G) + 
+        const['cp_air']*rho_air*(es-ea)/ra
+    )
+    
+    denominator=(
+        Delta+gamma*(1+rs/ra)
+    )
 
-    # calculate the equation terms:
-    a = 0.408*delta*Rn
-    b = (g*185396.2*(es-ea)/((T+273)))*(1/ra)
-    c = delta+g*(1+(rs/ra))     #*(1+0.34*u2)
-    
-    PE = (a+b)/c
-    
+    latentHeatFlux=numerator/denominator   # J/m2/s
+
+    # Get evaporation rate in mm/d
+    PE=latentHeatFlux/const['lambda_v']    # kg/m2/s
+    PE=PE*86400                            # mm/d
+
+    # Remove negative values
     PE[PE<0]=0
+    
     return PE
